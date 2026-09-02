@@ -146,20 +146,29 @@ ViT-Base                  & \textcolor{blue}{0.87 \ensuremath{\pm} 0.01}        
 
 ## WandB Integration
 
-Fetch metrics directly from Weights & Biases (WandB) runs and save them to CSV:
+Fetch metrics directly from Weights & Biases (WandB) projects or runs and save them to CSV:
 
 ```python
 from latex_table_generator import fetch_wandb_metrics
 
-# Fetch metrics from WandB and export to CSV
+# Option A: Fetch all runs from a WandB project
+fetch_wandb_metrics(
+    project="denoising_test",
+    metrics=["test_loss"],
+    output_path="wandb_metrics.csv",
+    # Optional: rename columns in CSV
+    metric_names=["loss"],
+    # Optional: threshold before raising a warning for large number of runs (default 50)
+    warn_threshold=50,
+)
+
+# Option B: Fetch specific run IDs
 fetch_wandb_metrics(
     run_ids=["300826143817", "300826145103"],
     metrics=["test_loss"],
     output_path="wandb_metrics.csv",
     # Optional: override model names (defaults to WandB run names)
     run_names=[],
-    # Optional: rename columns in CSV
-    metric_names=["loss"],
 )
 ```
 

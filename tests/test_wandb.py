@@ -43,6 +43,7 @@ def mock_wandb_api():
         raise ValueError(f"Run {path} not found")
 
     mock_api.run.side_effect = mock_run
+    mock_api.runs.return_value = [run1, run2]
     return mock_api
 
 
@@ -64,6 +65,31 @@ def test_fetch_wandb_metrics_default_names(mock_wandb_api):
     assert reader[1]["model"] == "drifting loss"
     assert reader[1]["id"] == "run_002"
     assert float(reader[1]["test_loss"]) == 0.15
+
+
+def test_fetch_wandb_metrics_by_project(mock_wandb_api):
+    with patch("wandb.Api", return_value=mock_wandb_api):
+        csv_out = fetch_wandb_metrics(
+            project="my_project",
+            metrics=["test_loss"],
+            entity="test_entity",
+        )
+
+    reader = list(csv.DictReader(io.StringIO(csv_out)))
+    assert len(reader) == 2
+    assert reader[0]["id"] == "run_001"
+    assert reader[1]["id"] == "run_002"
+
+
+def test_fetch_wandb_metrics_warn_threshold(mock_wandb_api):
+    with patch("wandb.Api", return_value=mock_wandb_api):
+        with pytest.warns(UserWarning, match="contains 2 runs"):
+            fetch_wandb_metrics(
+                project="my_project",
+                metrics=["test_loss"],
+                entity="test_entity",
+                warn_threshold=1,
+            )
 
 
 def test_fetch_wandb_metrics_custom_run_names(mock_wandb_api):
@@ -124,4 +150,20 @@ def test_live_wandb_fetch():
     assert len(reader) == 2
     assert reader[0]["id"] == "300826143817"
     assert reader[1]["id"] == "300826145103"
+    assert "test_loss" in reader[0]
+
+
+@pytest.mark.skipif(
+    not os.getenv("WANDB_API_KEY"),
+    reason="Live WandB API key not available in environment",
+)
+def test_live_wandb_fetch_by_project():
+    csv_out = fetch_wandb_metrics(
+        project="denoising_test",
+        metrics=["test_loss"],
+    )
+    reader = list(csv.DictReader(io.StringIO(csv_out)))
+    assert len(reader) >= 2
+    assert "id" in reader[0]
+    assert "model" in reader[0]
     assert "test_loss" in reader[0]
