@@ -193,8 +193,18 @@ latex-table-generator metrics.csv template.txt -r rules.yaml --pdf table.pdf --p
 
 ## Development & Testing
 
-Run tests with `pytest`:
-
+### Running Tests
 ```bash
 uv run pytest
+```
+
+### Pre-commit & Code Quality
+This project uses **pre-commit** with **ruff** formatting, linting, and automated test execution before every commit:
+
+```bash
+# Install git hooks
+uv run pre-commit install
+
+# Run all hooks manually
+uv run pre-commit run --all-files
 ```
