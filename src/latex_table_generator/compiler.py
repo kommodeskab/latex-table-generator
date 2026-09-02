@@ -22,9 +22,10 @@ def is_pdftoppm_available() -> bool:
 def create_standalone_document(
     table_latex: str,
     extra_packages: Sequence[str] | None = None,
+    border: str = "10pt",
 ) -> str:
-    """Wrap table LaTeX snippet in a minimal standalone document for compilation."""
-    packages = ["booktabs", "amsmath", "amssymb", "tabularx", "multirow"]
+    """Wrap table LaTeX snippet in a standalone document that automatically fits tables of any width."""
+    packages = ["booktabs", "amsmath", "amssymb", "tabularx", "multirow", "varwidth"]
     if extra_packages:
         packages.extend(extra_packages)
 
@@ -35,7 +36,7 @@ def create_standalone_document(
 
     pkg_imports = "\n".join(f"\\usepackage{{{pkg}}}" for pkg in unique_packages)
 
-    return f"""\\documentclass[preview,border=10pt]{{standalone}}
+    return f"""\\documentclass[border={border},varwidth=\\maxdimen]{{standalone}}
 \\usepackage[utf8]{{inputenc}}
 \\usepackage[dvipsnames,table]{{xcolor}}
 {pkg_imports}
@@ -53,7 +54,7 @@ def compile_table(
     engine: str = "pdflatex",
     extra_packages: Sequence[str] | None = None,
 ) -> tuple[Path | None, Path | None]:
-    """Compile LaTeX table to PDF and/or PNG preview.
+    """Compile LaTeX table to PDF and/or PNG preview without width clipping.
 
     Parameters
     ----------
@@ -83,9 +84,11 @@ def compile_table(
             "Please install TeX Live, MacTeX, or MiKTeX to compile tables."
         )
 
-    # Read table source if it's a file
+    # Read table source if it's a file path (avoiding Errno 36 on long LaTeX strings)
     if isinstance(table_source, Path) or (
-        isinstance(table_source, str) and Path(table_source).is_file()
+        isinstance(table_source, str)
+        and not ("\n" in table_source or "{" in table_source or "\\" in table_source)
+        and Path(table_source).is_file()
     ):
         table_code = Path(table_source).read_text(encoding="utf-8")
     else:
