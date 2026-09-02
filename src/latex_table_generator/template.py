@@ -410,11 +410,16 @@ class TemplateRenderer:
                         if "underline" not in it.assigned_styles:
                             it.assigned_styles.append("underline")
 
-                    # 3. Cell background color for rank
+                    # 3. Italic rank
+                    if rank_idx in rule.italic:
+                        if "italic" not in it.assigned_styles:
+                            it.assigned_styles.append("italic")
+
+                    # 4. Cell background color for rank
                     if rank_idx in rule.cell_color_ranks:
                         it.assigned_cell_color = rule.cell_color_ranks[rank_idx]
 
-                    # 4. Text color for rank
+                    # 5. Text color for rank
                     if rank_idx in rule.color_ranks:
                         it.assigned_color = rule.color_ranks[rank_idx]
 

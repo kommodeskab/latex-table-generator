@@ -410,3 +410,47 @@ def test_rounded_value_ranking_ties():
     assert r"Model A & \textbf{0.88} & \textbf{12.4} \\" in result
     assert r"Model B & \textbf{0.88} & \textbf{12.4} \\" in result
     assert r"Model C & \underline{0.85} & 24.8 \\" in result
+
+
+def test_rank_based_italic_styling():
+    metrics = MetricsStore(
+        {
+            "M1": {"acc": 0.95, "loss": 0.10},
+            "M2": {"acc": 0.90, "loss": 0.20},
+            "M3": {"acc": 0.85, "loss": 0.30},
+        }
+    )
+
+    rules = RulesConfig.from_dict(
+        {
+            "groups": {
+                "acc": {
+                    "higher_is_better": True,
+                    "bold": 1,
+                    "underline": 2,
+                    "italic": 3,
+                    "decimals": 2,
+                },
+                "loss": {
+                    "higher_is_better": False,
+                    "italic": 1,
+                    "decimals": 2,
+                },
+            }
+        }
+    )
+
+    template = (
+        "M1 & [acc]{M1.acc} & [loss]{M1.loss} \\\\\n"
+        "M2 & [acc]{M2.acc} & [loss]{M2.loss} \\\\\n"
+        "M3 & [acc]{M3.acc} & [loss]{M3.loss} \\\\"
+    )
+
+    renderer = TemplateRenderer(metrics, rules=rules)
+    result = renderer.render(template)
+
+    # acc: M1 (0.95) -> bold, M2 (0.90) -> underline, M3 (0.85) -> italic
+    # loss: M1 (0.10, lowest) -> italic
+    assert r"M1 & \textbf{0.95} & \textit{0.10} \\" in result
+    assert r"M2 & \underline{0.90} & 0.20 \\" in result
+    assert r"M3 & \textit{0.85} & 0.30 \\" in result

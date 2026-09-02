@@ -207,6 +207,7 @@ groups:
     higher_is_better: true         # Set true for accuracy/F1, false for error/loss/latency
     bold: 1                        # Rank(s) to bold: 1 = best, 2 = 2nd best, [1, 2] = top 2
     underline: 2                   # Rank(s) to underline: 2 = 2nd best, 1 = best
+    italic: 3                      # Rank(s) to italicize: 3 = 3rd best
     decimals: 2                    # Precision for numbers in this group
     si_prefix: true                # Auto-scale with SI prefixes (175000000 -> 175.0M, 0.000025 -> 25.0µs)
     auto_scale: "binary"           # Or "binary" / "iec" for base-1024 (e.g., 16.0GiB)

@@ -16,6 +16,7 @@ class GroupRule:
     higher_is_better: bool = True
     bold: list[int] = field(default_factory=list)
     underline: list[int] = field(default_factory=list)
+    italic: list[int] = field(default_factory=list)
     color: str | None = None
     color_ranks: dict[int, str] = field(default_factory=dict)
     cell_color: str | None = None
@@ -82,6 +83,7 @@ class GroupRule:
 
         bold_ranks = _parse_rank_list(data.get("bold"))
         underline_ranks = _parse_rank_list(data.get("underline"))
+        italic_ranks = _parse_rank_list(data.get("italic"))
 
         # Legacy flags: bold_highest / bold_lowest / underline_highest / underline_lowest
         bold_highest = bool(data.get("bold_highest", False))
@@ -258,6 +260,7 @@ class GroupRule:
             higher_is_better=higher_is_better,
             bold=bold_ranks,
             underline=underline_ranks,
+            italic=italic_ranks,
             color=static_color,
             color_ranks=color_ranks,
             cell_color=static_cell_color,
