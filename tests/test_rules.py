@@ -361,3 +361,52 @@ def test_rank_based_multiple_ranks_and_colors(sample_metrics):
     assert r"Model A & 0.75 \\" in result
     assert r"Model B & \cellcolor{green!20} \textbf{0.89} \\" in result
     assert r"Model C & \cellcolor{yellow!15} \underline{0.81} \\" in result
+
+
+def test_rounded_value_ranking_ties():
+    # Model A: 0.884 -> rounds to 0.88
+    # Model B: 0.881 -> rounds to 0.88
+    # Model C: 0.852 -> rounds to 0.85
+    # Both Model A and Model B should tie for Rank 1 and both be bold!
+    # Model C is Rank 2 and should be underlined!
+    metrics = MetricsStore(
+        {
+            "ModelA": {"acc": 0.884, "err": 12.44},
+            "ModelB": {"acc": 0.881, "err": 12.41},
+            "ModelC": {"acc": 0.852, "err": 24.80},
+        }
+    )
+
+    rules = RulesConfig.from_dict(
+        {
+            "groups": {
+                "acc": {
+                    "higher_is_better": True,
+                    "bold": 1,
+                    "underline": 2,
+                    "decimals": 2,
+                },
+                "err": {
+                    "higher_is_better": False,
+                    "bold": 1,
+                    "decimals": 1,
+                },
+            }
+        }
+    )
+
+    template = (
+        "Model A & [acc]{ModelA.acc} & [err]{ModelA.err} \\\\\n"
+        "Model B & [acc]{ModelB.acc} & [err]{ModelB.err} \\\\\n"
+        "Model C & [acc]{ModelC.acc} & [err]{ModelC.err} \\\\"
+    )
+
+    renderer = TemplateRenderer(metrics, rules=rules)
+    result = renderer.render(template)
+
+    # Both Model A (0.88) and Model B (0.88) get bold
+    # Model C (0.85) gets underline
+    # In error (lower is better, 1 decimal): Model A (12.4) and Model B (12.4) both get bold!
+    assert r"Model A & \textbf{0.88} & \textbf{12.4} \\" in result
+    assert r"Model B & \textbf{0.88} & \textbf{12.4} \\" in result
+    assert r"Model C & \underline{0.85} & 24.8 \\" in result

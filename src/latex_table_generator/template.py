@@ -9,12 +9,14 @@ from pathlib import Path
 from typing import Any, Mapping
 
 from latex_table_generator.formatter import (
+    _parse_format_spec,
     apply_latex_styles,
     format_uncertainty,
     format_value,
+    get_si_prefix_scaling,
 )
 from latex_table_generator.metrics import MetricsStore, load_metrics
-from latex_table_generator.rules import RulesConfig, load_rules
+from latex_table_generator.rules import GroupRule, RulesConfig, load_rules
 
 # Regex to match uncertainty operators: +- , +/- , \pm , ±
 UNCERTAINTY_PATTERN = re.compile(r"\s*(?:\+\-|\+\/\-|\\pm|±)\s*")
@@ -319,8 +321,49 @@ class TemplateRenderer:
 
         return items
 
+    def _get_item_rounded_value(self, it: _ItemMatch, rule: GroupRule) -> float:
+        """Compute the displayed rounded numerical value for an item within a group."""
+        if it.numeric_val is None:
+            return 0.0
+
+        # 1. Determine effective decimals
+        decimals = self.decimals
+        if self.rules.default_rule.decimals is not None:
+            decimals = self.rules.default_rule.decimals
+        if rule.decimals is not None:
+            decimals = rule.decimals
+        for g in it.groups:
+            g_rule = self.rules.get_rule(g)
+            if g_rule.decimals is not None:
+                decimals = g_rule.decimals
+                break
+
+        num_spec, _, spec_auto, spec_scale, _ = _parse_format_spec(it.format_spec)
+        if num_spec and num_spec.startswith("."):
+            try:
+                spec_dec = int("".join(c for c in num_spec[1:] if c.isdigit()))
+                decimals = spec_dec
+            except ValueError:
+                pass
+
+        auto_scale = spec_auto if spec_auto is not None else rule.auto_scale
+        scale = spec_scale if spec_scale is not None else rule.scale
+
+        val = float(it.numeric_val)
+        if auto_scale:
+            factor, _ = get_si_prefix_scaling(val, mode=auto_scale)
+            scaled_val = val / factor
+        elif scale is not None:
+            scaled_val = val * scale
+        else:
+            scaled_val = val
+
+        if decimals is not None:
+            return round(scaled_val, decimals)
+        return scaled_val
+
     def _evaluate_group_extremums(self, items: list[_ItemMatch]) -> None:
-        """Calculate ranked highlights (bold, underline, colors) for each group."""
+        """Calculate ranked highlights (bold, underline, colors) for each group based on rounded values."""
         group_items_map: dict[str, list[_ItemMatch]] = {}
         for item in items:
             for g in item.groups:
@@ -334,24 +377,26 @@ class TemplateRenderer:
             if not valid_numeric_items:
                 continue
 
-            # Sort unique values by rank: reverse=True if higher_is_better else reverse=False
+            # Compute rounded displayed value for each item
+            item_rounded_map = {
+                it.match_id: self._get_item_rounded_value(it, rule)
+                for it in valid_numeric_items
+            }
+
+            # Sort unique rounded values by rank: reverse=True if higher_is_better else reverse=False
             unique_vals = sorted(
-                list(
-                    set(
-                        it.numeric_val
-                        for it in valid_numeric_items
-                        if it.numeric_val is not None
-                    )
-                ),
+                list(set(item_rounded_map[it.match_id] for it in valid_numeric_items)),
                 reverse=rule.higher_is_better,
             )
 
             for rank_idx, rank_val in enumerate(unique_vals, start=1):
+                # Apply style to all items that tie/score the same rounded value
                 matching_items = [
                     it
                     for it in valid_numeric_items
-                    if it.numeric_val is not None
-                    and math.isclose(it.numeric_val, rank_val, rel_tol=1e-9)
+                    if math.isclose(
+                        item_rounded_map[it.match_id], rank_val, rel_tol=1e-9
+                    )
                 ]
 
                 for it in matching_items:
@@ -419,8 +464,8 @@ class TemplateRenderer:
             if rule.bold_lowest and rule.higher_is_better and unique_vals:
                 lowest_val = unique_vals[-1]
                 for it in valid_numeric_items:
-                    if it.numeric_val is not None and math.isclose(
-                        it.numeric_val, lowest_val, rel_tol=1e-9
+                    if math.isclose(
+                        item_rounded_map[it.match_id], lowest_val, rel_tol=1e-9
                     ):
                         if "bold" not in it.assigned_styles:
                             it.assigned_styles.append("bold")
@@ -428,8 +473,8 @@ class TemplateRenderer:
             if rule.underline_lowest and rule.higher_is_better and unique_vals:
                 lowest_val = unique_vals[-1]
                 for it in valid_numeric_items:
-                    if it.numeric_val is not None and math.isclose(
-                        it.numeric_val, lowest_val, rel_tol=1e-9
+                    if math.isclose(
+                        item_rounded_map[it.match_id], lowest_val, rel_tol=1e-9
                     ):
                         if "underline" not in it.assigned_styles:
                             it.assigned_styles.append("underline")
@@ -437,8 +482,8 @@ class TemplateRenderer:
             if rule.cell_color_lowest and rule.higher_is_better and unique_vals:
                 lowest_val = unique_vals[-1]
                 for it in valid_numeric_items:
-                    if it.numeric_val is not None and math.isclose(
-                        it.numeric_val, lowest_val, rel_tol=1e-9
+                    if math.isclose(
+                        item_rounded_map[it.match_id], lowest_val, rel_tol=1e-9
                     ):
                         it.assigned_cell_color = rule.cell_color_lowest
 
