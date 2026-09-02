@@ -291,3 +291,73 @@ def test_cell_color_highest_and_lowest(sample_metrics):
     assert r"Model A & \cellcolor{red!15} 0.75 \ensuremath{\pm} 0.01 \\" in result
     assert r"Model B & \cellcolor{green!20} 0.89 \ensuremath{\pm} 0.01 \\" in result
     assert r"Model C & 0.81 \ensuremath{\pm} 0.01 \\" in result
+
+
+def test_rank_based_bold_and_higher_is_better(sample_metrics):
+    # ModelA: acc=0.7512 (rank 3), lat=12.4 (rank 1 best)
+    # ModelB: acc=0.8856 (rank 1 best), lat=24.8 (rank 2)
+    # ModelC: acc=0.8123 (rank 2), lat=45.2 (rank 3)
+    rules = RulesConfig.from_dict(
+        {
+            "groups": {
+                # Accuracy: higher_is_better=True, 2nd highest should be bold
+                "acc": {
+                    "higher_is_better": True,
+                    "bold": 2,
+                    "decimals": 2,
+                },
+                # Latency: higher_is_better=False, lowest should be underlined
+                "lat": {
+                    "higher_is_better": False,
+                    "underline": 1,
+                    "decimals": 1,
+                },
+            }
+        }
+    )
+
+    template = (
+        "Model A & [acc]{ModelA.acc_mean} & [lat]{ModelA.latency} \\\\\n"
+        "Model B & [acc]{ModelB.acc_mean} & [lat]{ModelB.latency} \\\\\n"
+        "Model C & [acc]{ModelC.acc_mean} & [lat]{ModelC.latency} \\\\"
+    )
+
+    renderer = TemplateRenderer(sample_metrics, rules=rules)
+    result = renderer.render(template)
+
+    # Model C has 2nd highest accuracy (0.8123) -> bold
+    # Model A has lowest latency (12.4) -> underline
+    assert r"Model A & 0.75 & \underline{12.4} \\" in result
+    assert r"Model B & 0.89 & 24.8 \\" in result
+    assert r"Model C & \textbf{0.81} & 45.2 \\" in result
+
+
+def test_rank_based_multiple_ranks_and_colors(sample_metrics):
+    rules = RulesConfig.from_dict(
+        {
+            "groups": {
+                "acc": {
+                    "higher_is_better": True,
+                    "bold": 1,
+                    "underline": 2,
+                    "cell_color": {1: "green!20", 2: "yellow!15"},
+                    "decimals": 2,
+                }
+            }
+        }
+    )
+
+    template = (
+        "Model A & [acc]{ModelA.acc_mean} \\\\\n"
+        "Model B & [acc]{ModelB.acc_mean} \\\\\n"
+        "Model C & [acc]{ModelC.acc_mean} \\\\"
+    )
+
+    renderer = TemplateRenderer(sample_metrics, rules=rules)
+    result = renderer.render(template)
+
+    # Model B is Rank 1 -> bold & cell_color green!20
+    # Model C is Rank 2 -> underline & cell_color yellow!15
+    assert r"Model A & 0.75 \\" in result
+    assert r"Model B & \cellcolor{green!20} \textbf{0.89} \\" in result
+    assert r"Model C & \cellcolor{yellow!15} \underline{0.81} \\" in result

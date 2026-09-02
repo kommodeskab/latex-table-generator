@@ -131,6 +131,7 @@ class _ItemMatch:
     plain_content: str | None = None
     assigned_styles: list[str] = field(default_factory=list)
     assigned_cell_color: str | None = None
+    assigned_color: str | None = None
 
 
 class TemplateRenderer:
@@ -319,8 +320,7 @@ class TemplateRenderer:
         return items
 
     def _evaluate_group_extremums(self, items: list[_ItemMatch]) -> None:
-        """Calculate maximum, minimum, and extremum highlights for each group."""
-        # Map group_name -> list of items in that group
+        """Calculate ranked highlights (bold, underline, colors) for each group."""
         group_items_map: dict[str, list[_ItemMatch]] = {}
         for item in items:
             for g in item.groups:
@@ -328,109 +328,119 @@ class TemplateRenderer:
                     group_items_map[g] = []
                 group_items_map[g].append(item)
 
-        def _extract_cell_color(style_list: list[str]) -> str | None:
-            for s in style_list:
-                s_lower = s.lower().strip()
-                if s_lower.startswith("cell_color:") or s_lower.startswith(
-                    "cellcolor:"
-                ):
-                    return s.split(":", 1)[1].strip()
-                elif s_lower.startswith("bg:") or s_lower.startswith("bg_color:"):
-                    return s.split(":", 1)[1].strip()
-            return None
-
         for group_name, g_items in group_items_map.items():
             rule = self.rules.get_rule(group_name)
             valid_numeric_items = [it for it in g_items if it.numeric_val is not None]
             if not valid_numeric_items:
                 continue
 
-            values = [
-                it.numeric_val
-                for it in valid_numeric_items
-                if it.numeric_val is not None
-            ]
-            max_val = max(values)
-            min_val = min(values)
+            # Sort unique values by rank: reverse=True if higher_is_better else reverse=False
+            unique_vals = sorted(
+                list(
+                    set(
+                        it.numeric_val
+                        for it in valid_numeric_items
+                        if it.numeric_val is not None
+                    )
+                ),
+                reverse=rule.higher_is_better,
+            )
 
-            # Check distinct values for second highest/lowest
-            distinct_sorted = sorted(list(set(values)))
-            second_max = distinct_sorted[-2] if len(distinct_sorted) >= 2 else None
-            second_min = distinct_sorted[1] if len(distinct_sorted) >= 2 else None
+            for rank_idx, rank_val in enumerate(unique_vals, start=1):
+                matching_items = [
+                    it
+                    for it in valid_numeric_items
+                    if it.numeric_val is not None
+                    and math.isclose(it.numeric_val, rank_val, rel_tol=1e-9)
+                ]
 
-            for it in valid_numeric_items:
-                if it.numeric_val is None:
-                    continue
+                for it in matching_items:
+                    # 1. Bold rank
+                    if rank_idx in rule.bold:
+                        if "bold" not in it.assigned_styles:
+                            it.assigned_styles.append("bold")
 
-                # Highest in group
-                if math.isclose(it.numeric_val, max_val, rel_tol=1e-9):
-                    if rule.bold_highest and "bold" not in it.assigned_styles:
-                        it.assigned_styles.append("bold")
-                    if rule.underline_highest and "underline" not in it.assigned_styles:
-                        it.assigned_styles.append("underline")
-                    if rule.cell_color_highest:
-                        it.assigned_cell_color = rule.cell_color_highest
-                    else:
-                        hl_bg = _extract_cell_color(rule.highlight_highest)
-                        if hl_bg:
-                            it.assigned_cell_color = hl_bg
+                    # 2. Underline rank
+                    if rank_idx in rule.underline:
+                        if "underline" not in it.assigned_styles:
+                            it.assigned_styles.append("underline")
 
-                    for st in rule.highlight_highest:
-                        if not any(
-                            st.lower().startswith(p)
-                            for p in ("cell_color:", "cellcolor:", "bg:", "bg_color:")
-                        ):
-                            if st not in it.assigned_styles:
-                                it.assigned_styles.append(st)
+                    # 3. Cell background color for rank
+                    if rank_idx in rule.cell_color_ranks:
+                        it.assigned_cell_color = rule.cell_color_ranks[rank_idx]
 
-                # Lowest in group
-                if math.isclose(it.numeric_val, min_val, rel_tol=1e-9):
-                    if rule.bold_lowest and "bold" not in it.assigned_styles:
-                        it.assigned_styles.append("bold")
-                    if rule.underline_lowest and "underline" not in it.assigned_styles:
-                        it.assigned_styles.append("underline")
-                    if rule.cell_color_lowest:
+                    # 4. Text color for rank
+                    if rank_idx in rule.color_ranks:
+                        it.assigned_color = rule.color_ranks[rank_idx]
+
+                    # 5. Legacy highlight list support
+                    if rank_idx == 1:
+                        hl_list = (
+                            rule.highlight_highest
+                            if rule.higher_is_better
+                            else rule.highlight_lowest
+                        )
+                        for st in hl_list:
+                            if not any(
+                                st.lower().startswith(p)
+                                for p in (
+                                    "cell_color:",
+                                    "cellcolor:",
+                                    "bg:",
+                                    "bg_color:",
+                                )
+                            ):
+                                if st not in it.assigned_styles:
+                                    it.assigned_styles.append(st)
+                            else:
+                                it.assigned_cell_color = st.split(":", 1)[1].strip()
+                    elif rank_idx == 2:
+                        hl_2nd = (
+                            rule.highlight_second_highest
+                            if rule.higher_is_better
+                            else rule.highlight_second_lowest
+                        )
+                        for st in hl_2nd:
+                            if not any(
+                                st.lower().startswith(p)
+                                for p in (
+                                    "cell_color:",
+                                    "cellcolor:",
+                                    "bg:",
+                                    "bg_color:",
+                                )
+                            ):
+                                if st not in it.assigned_styles:
+                                    it.assigned_styles.append(st)
+                            else:
+                                it.assigned_cell_color = st.split(":", 1)[1].strip()
+
+            # Handle opposite-direction legacy flags if any
+            if rule.bold_lowest and rule.higher_is_better and unique_vals:
+                lowest_val = unique_vals[-1]
+                for it in valid_numeric_items:
+                    if it.numeric_val is not None and math.isclose(
+                        it.numeric_val, lowest_val, rel_tol=1e-9
+                    ):
+                        if "bold" not in it.assigned_styles:
+                            it.assigned_styles.append("bold")
+
+            if rule.underline_lowest and rule.higher_is_better and unique_vals:
+                lowest_val = unique_vals[-1]
+                for it in valid_numeric_items:
+                    if it.numeric_val is not None and math.isclose(
+                        it.numeric_val, lowest_val, rel_tol=1e-9
+                    ):
+                        if "underline" not in it.assigned_styles:
+                            it.assigned_styles.append("underline")
+
+            if rule.cell_color_lowest and rule.higher_is_better and unique_vals:
+                lowest_val = unique_vals[-1]
+                for it in valid_numeric_items:
+                    if it.numeric_val is not None and math.isclose(
+                        it.numeric_val, lowest_val, rel_tol=1e-9
+                    ):
                         it.assigned_cell_color = rule.cell_color_lowest
-                    else:
-                        hl_bg = _extract_cell_color(rule.highlight_lowest)
-                        if hl_bg:
-                            it.assigned_cell_color = hl_bg
-
-                    for st in rule.highlight_lowest:
-                        if not any(
-                            st.lower().startswith(p)
-                            for p in ("cell_color:", "cellcolor:", "bg:", "bg_color:")
-                        ):
-                            if st not in it.assigned_styles:
-                                it.assigned_styles.append(st)
-
-                # Second highest in group
-                if second_max is not None and math.isclose(
-                    it.numeric_val, second_max, rel_tol=1e-9
-                ):
-                    if rule.cell_color_second_highest:
-                        it.assigned_cell_color = rule.cell_color_second_highest
-                    for st in rule.highlight_second_highest:
-                        if not any(
-                            st.lower().startswith(p)
-                            for p in ("cell_color:", "cellcolor:", "bg:", "bg_color:")
-                        ):
-                            if st not in it.assigned_styles:
-                                it.assigned_styles.append(st)
-
-                # Second lowest in group
-                if second_min is not None and math.isclose(
-                    it.numeric_val, second_min, rel_tol=1e-9
-                ):
-                    if rule.cell_color_second_lowest:
-                        it.assigned_cell_color = rule.cell_color_second_lowest
-                    for st in rule.highlight_second_lowest:
-                        if not any(
-                            st.lower().startswith(p)
-                            for p in ("cell_color:", "cellcolor:", "bg:", "bg_color:")
-                        ):
-                            if st not in it.assigned_styles:
-                                it.assigned_styles.append(st)
 
     def _render_item(self, item: _ItemMatch) -> str:
         """Render a single parsed item into its LaTeX formatted string."""
@@ -445,18 +455,19 @@ class TemplateRenderer:
             if self.rules.default_rule.decimals is not None:
                 decimals = self.rules.default_rule.decimals
 
-        # 2. Determine text color: first group with color
-        color: str | None = None
-        for g in item.groups:
-            rule = self.rules.get_rule(g)
-            if rule.color:
-                color = rule.color
-                break
-        else:
-            if self.rules.default_rule.color:
-                color = self.rules.default_rule.color
+        # 2. Determine text color: item assigned rank color first, then group static color, then default
+        color: str | None = item.assigned_color
+        if not color:
+            for g in item.groups:
+                rule = self.rules.get_rule(g)
+                if rule.color:
+                    color = rule.color
+                    break
+            else:
+                if self.rules.default_rule.color:
+                    color = self.rules.default_rule.color
 
-        # 3. Determine cell background color: item assigned extremum color or static group cell_color
+        # 3. Determine cell background color: item assigned rank cell color first, then static group cell_color
         cell_color: str | None = item.assigned_cell_color
         if not cell_color:
             for g in item.groups:

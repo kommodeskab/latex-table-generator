@@ -204,21 +204,18 @@ drifting loss,300826145103,0.6875496506690979
 ```yaml
 groups:
   group_name:
+    higher_is_better: true         # Set true for accuracy/F1, false for error/loss/latency
+    bold: 1                        # Rank(s) to bold: 1 = best, 2 = 2nd best, [1, 2] = top 2
+    underline: 2                   # Rank(s) to underline: 2 = 2nd best, 1 = best
     decimals: 2                    # Precision for numbers in this group
     si_prefix: true                # Auto-scale with SI prefixes (175000000 -> 175.0M, 0.000025 -> 25.0µs)
     auto_scale: "binary"           # Or "binary" / "iec" for base-1024 (e.g., 16.0GiB)
     scale: 100                     # Manual multiplier (e.g. 100 for percentages: 0.8812 -> 88.12)
     unit: "B"                      # Unit suffix (e.g. "B", "FLOPs", "s", "%")
-    bold_highest: true             # Bold the highest number in the group
-    bold_lowest: false             # Bold the lowest number in the group
-    underline_highest: false       # Underline the highest number
-    underline_lowest: true         # Underline the lowest number
-    highlight_highest: ["bold"]    # General highlight: "bold", "underline", "italic"
-    highlight_lowest: ["underline"]
-    color: "blue"                  # Text color ("blue", "red", or hex "#FF5733")
-    cell_color: "yellow!25"        # Background color for the full cell
-    cell_color_highest: "green!20" # Background color for the highest value cell
-    cell_color_lowest: "red!15"    # Background color for the lowest value cell
+    color: "blue"                  # Static text color ("blue", "red", or hex "#FF5733")
+    cell_color: "yellow!25"        # Background color for the full group cells
+    cell_color_1: "green!15"       # Background color for rank 1 (best)
+    cell_color_2: "yellow!15"      # Background color for rank 2 (second best)
     styles: ["italic"]             # Static styles applied to all cells in group
 ```
 
