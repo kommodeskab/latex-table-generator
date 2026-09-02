@@ -164,6 +164,10 @@ ViT-Base                  & \textcolor{blue}{0.87 \ensuremath{\pm} 0.01}        
 groups:
   group_name:
     decimals: 2                    # Precision for numbers in this group
+    si_prefix: true                # Auto-scale with SI prefixes (175000000 -> 175.0M, 0.000025 -> 25.0µs)
+    auto_scale: "binary"           # Or "binary" / "iec" for base-1024 (e.g., 16.0GiB)
+    scale: 100                     # Manual multiplier (e.g. 100 for percentages: 0.8812 -> 88.12)
+    unit: "B"                      # Unit suffix (e.g. "B", "FLOPs", "s", "%")
     bold_highest: true             # Bold the highest number in the group
     bold_lowest: false             # Bold the lowest number in the group
     underline_highest: false       # Underline the highest number

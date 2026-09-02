@@ -171,15 +171,28 @@ class TemplateRenderer:
             main_expr = parts[0].strip()
             for extra in parts[1:]:
                 extra_clean = extra.strip()
+                extra_lower = extra_clean.lower()
                 # Check if it's a group name or format spec
-                if extra_clean.startswith(".") or extra_clean.lower() in (
-                    "bold",
-                    "textbf",
-                    "italic",
-                    "textit",
-                    "underline",
-                    "math",
-                    "code",
+                if (
+                    extra_clean.startswith(".")
+                    or extra_lower
+                    in (
+                        "bold",
+                        "textbf",
+                        "italic",
+                        "textit",
+                        "underline",
+                        "math",
+                        "code",
+                        "si",
+                        "si_prefix",
+                        "auto_scale",
+                        "binary",
+                        "iec",
+                    )
+                    or extra_lower.startswith("scale=")
+                    or extra_lower.startswith("unit=")
+                    or extra_lower.startswith("factor=")
                 ):
                     format_spec = (
                         extra_clean
@@ -191,29 +204,44 @@ class TemplateRenderer:
                         if g not in groups:
                             groups.append(g)
 
-        # Check for colon syntax: expr : spec_or_group
-        elif ":" in inner_trimmed:
-            parts = inner_trimmed.rsplit(":", 1)
+        # Check for colon syntax in main_expr: expr : spec_or_group
+        if ":" in main_expr:
+            parts = main_expr.rsplit(":", 1)
             candidate_expr = parts[0].strip()
             candidate_spec = parts[1].strip()
-            if candidate_spec.lower().startswith(
-                "group="
-            ) or candidate_spec.lower().startswith("groups="):
+            cand_lower = candidate_spec.lower()
+            if cand_lower.startswith("group=") or cand_lower.startswith("groups="):
                 main_expr = candidate_expr
                 for g in _extract_group_names(candidate_spec):
                     if g not in groups:
                         groups.append(g)
-            elif candidate_spec.startswith(".") or candidate_spec.lower() in (
-                "bold",
-                "textbf",
-                "italic",
-                "textit",
-                "underline",
-                "math",
-                "code",
+            elif (
+                candidate_spec.startswith(".")
+                or cand_lower
+                in (
+                    "bold",
+                    "textbf",
+                    "italic",
+                    "textit",
+                    "underline",
+                    "math",
+                    "code",
+                    "si",
+                    "si_prefix",
+                    "auto_scale",
+                    "binary",
+                    "iec",
+                )
+                or cand_lower.startswith("scale=")
+                or cand_lower.startswith("unit=")
+                or cand_lower.startswith("factor=")
             ):
                 main_expr = candidate_expr
-                format_spec = candidate_spec
+                format_spec = (
+                    candidate_spec
+                    if not format_spec
+                    else f"{candidate_spec}|{format_spec}"
+                )
             elif self.rules.has_group(candidate_spec):
                 main_expr = candidate_expr
                 if candidate_spec not in groups:
@@ -440,7 +468,27 @@ class TemplateRenderer:
                 if self.rules.default_rule.cell_color:
                     cell_color = self.rules.default_rule.cell_color
 
-        # 4. Combine styles: static group styles + extremum assigned styles
+        # 4. Determine auto_scale, scale, unit from groups or default rule
+        auto_scale: str | bool | None = None
+        scale: float | None = None
+        unit: str | None = None
+        for g in item.groups:
+            rule = self.rules.get_rule(g)
+            if auto_scale is None and rule.auto_scale is not None:
+                auto_scale = rule.auto_scale
+            if scale is None and rule.scale is not None:
+                scale = rule.scale
+            if unit is None and rule.unit is not None:
+                unit = rule.unit
+
+        if auto_scale is None and self.rules.default_rule.auto_scale is not None:
+            auto_scale = self.rules.default_rule.auto_scale
+        if scale is None and self.rules.default_rule.scale is not None:
+            scale = self.rules.default_rule.scale
+        if unit is None and self.rules.default_rule.unit is not None:
+            unit = self.rules.default_rule.unit
+
+        # 5. Combine styles: static group styles + extremum assigned styles
         styles: list[str] = list(item.assigned_styles)
         for g in item.groups:
             rule = self.rules.get_rule(g)
@@ -448,7 +496,7 @@ class TemplateRenderer:
                 if st not in styles:
                     styles.append(st)
 
-        # 5. Format string
+        # 6. Format string
         if item.is_uncertainty:
             return format_uncertainty(
                 mean_val=item.val1,
@@ -459,6 +507,9 @@ class TemplateRenderer:
                 extra_styles=styles,
                 color=color,
                 cell_color=cell_color,
+                auto_scale=auto_scale,
+                scale=scale,
+                unit=unit,
             )
         elif not item.is_plain_text:
             return format_value(
@@ -468,6 +519,9 @@ class TemplateRenderer:
                 extra_styles=styles,
                 color=color,
                 cell_color=cell_color,
+                auto_scale=auto_scale,
+                scale=scale,
+                unit=unit,
             )
         else:
             return apply_latex_styles(

@@ -28,6 +28,9 @@ class GroupRule:
     cell_color_lowest: str | None = None
     cell_color_second_highest: str | None = None
     cell_color_second_lowest: str | None = None
+    auto_scale: str | bool | None = None
+    scale: float | None = None
+    unit: str | None = None
     styles: list[str] = field(default_factory=list)
     custom_format: str | None = None
 
@@ -126,6 +129,24 @@ class GroupRule:
         if cell_color_2nd_lowest is not None:
             cell_color_2nd_lowest = str(cell_color_2nd_lowest).strip()
 
+        # Auto-scaling and unit options
+        auto_scale = (
+            data.get("auto_scale")
+            or data.get("si_prefix")
+            or data.get("si")
+            or data.get("si_scaling")
+        )
+        if isinstance(auto_scale, str):
+            auto_scale = auto_scale.strip().lower()
+
+        scale = data.get("scale") or data.get("scale_factor") or data.get("multiplier")
+        if scale is not None:
+            scale = float(scale)
+
+        unit = data.get("unit") or data.get("units") or data.get("suffix")
+        if unit is not None:
+            unit = str(unit)
+
         styles_raw = data.get("styles", [])
         styles: list[str] = []
         if isinstance(styles_raw, str):
@@ -156,6 +177,9 @@ class GroupRule:
             cell_color_lowest=cell_color_lowest,
             cell_color_second_highest=cell_color_2nd_highest,
             cell_color_second_lowest=cell_color_2nd_lowest,
+            auto_scale=auto_scale,
+            scale=scale,
+            unit=unit,
             styles=styles,
             custom_format=custom_format,
         )

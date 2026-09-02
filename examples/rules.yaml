@@ -1,5 +1,11 @@
 # Group rules configuration for LaTeX table generator
 groups:
+  # Parameters group: auto-scale with SI prefixes (e.g., 11700000 -> 11.7M)
+  params:
+    si_prefix: true
+    decimals: 1
+    bold_lowest: true
+
   # Accuracy group: 2 decimals, bold highest, underline lowest, blue text, light-green cell for highest
   accuracy:
     decimals: 2
