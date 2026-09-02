@@ -5,7 +5,9 @@ description = "Generate customizable LaTeX tables from CSV metrics and template 
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
+    "python-dotenv>=1.2.3",
     "pyyaml>=6.0.3",
+    "wandb>=0.29.0",
 ]
 
 [project.scripts]

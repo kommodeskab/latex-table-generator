@@ -142,6 +142,32 @@ ViT-Base                  & \textcolor{blue}{0.87 \ensuremath{\pm} 0.01}        
 \bottomrule
 \end{tabular}
 \end{table}
+---
+
+## WandB Integration
+
+Fetch metrics directly from Weights & Biases (WandB) runs and save them to CSV:
+
+```python
+from latex_table_generator import fetch_wandb_metrics
+
+# Fetch metrics from WandB and export to CSV
+fetch_wandb_metrics(
+    run_ids=["300826143817", "300826145103"],
+    metrics=["test_loss"],
+    output_path="wandb_metrics.csv",
+    # Optional: override model names (defaults to WandB run names)
+    run_names=[],
+    # Optional: rename columns in CSV
+    metric_names=["loss"],
+)
+```
+
+Generated `wandb_metrics.csv`:
+```csv
+model,id,loss
+snr loss,300826143817,-18.646778106689453
+drifting loss,300826145103,0.6875496506690979
 ```
 
 ---

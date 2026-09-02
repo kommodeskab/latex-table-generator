@@ -78,21 +78,21 @@ def generate_latex_table(
     )
 
     # Check if template_path is a path to an existing file or a raw template string
-    if isinstance(template_path, (str, Path)):
+    if isinstance(template_path, str) and (
+        "\n" in template_path or "&" in template_path or "{" in template_path
+    ):
+        result = renderer.render(template_path)
+        if output_path is not None:
+            out_p = Path(output_path)
+            out_p.parent.mkdir(parents=True, exist_ok=True)
+            out_p.write_text(result, encoding=encoding)
+        return result
+    elif isinstance(template_path, (str, Path)):
         template_p = Path(template_path)
         if template_p.exists() and template_p.is_file():
             return renderer.render_file(
                 template_p, output_path=output_path, encoding=encoding
             )
-        elif isinstance(template_path, str) and (
-            "&" in template_path or "\n" in template_path or "{" in template_path
-        ):
-            result = renderer.render(template_path)
-            if output_path is not None:
-                out_p = Path(output_path)
-                out_p.parent.mkdir(parents=True, exist_ok=True)
-                out_p.write_text(result, encoding=encoding)
-            return result
         else:
             raise FileNotFoundError(f"Template file not found: {template_path}")
 

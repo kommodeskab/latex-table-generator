@@ -20,6 +20,11 @@ from latex_table_generator.metrics import (
 )
 from latex_table_generator.rules import GroupRule, RulesConfig, load_rules
 from latex_table_generator.template import TemplateRenderer, align_latex_table
+from latex_table_generator.wandb_loader import (
+    export_wandb_metrics,
+    fetch_wandb_metrics,
+    load_wandb_metrics,
+)
 
 __version__ = "0.1.0"
 
@@ -41,4 +46,7 @@ __all__ = [
     "GroupRule",
     "RulesConfig",
     "load_rules",
+    "fetch_wandb_metrics",
+    "load_wandb_metrics",
+    "export_wandb_metrics",
 ]
