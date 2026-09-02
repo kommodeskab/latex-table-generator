@@ -95,10 +95,11 @@ def test_group_rules_with_auto_scale_and_units():
         {
             "groups": {
                 "p_group": {
+                    "higher_is_better": False,
                     "si_prefix": True,
                     "decimals": 1,
                     "unit": " params",
-                    "bold_lowest": True,
+                    "bold": 1,
                 },
                 "f_group": {
                     "si_prefix": True,

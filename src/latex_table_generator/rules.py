@@ -28,20 +28,6 @@ class GroupRule:
     styles: list[str] = field(default_factory=list)
     custom_format: str | None = None
 
-    # Backwards compatibility fields
-    bold_highest: bool = False
-    bold_lowest: bool = False
-    underline_highest: bool = False
-    underline_lowest: bool = False
-    highlight_highest: list[str] = field(default_factory=list)
-    highlight_lowest: list[str] = field(default_factory=list)
-    highlight_second_highest: list[str] = field(default_factory=list)
-    highlight_second_lowest: list[str] = field(default_factory=list)
-    cell_color_highest: str | None = None
-    cell_color_lowest: str | None = None
-    cell_color_second_highest: str | None = None
-    cell_color_second_lowest: str | None = None
-
     @classmethod
     def from_dict(cls, name: str, data: Mapping[str, Any] | None) -> GroupRule:
         if not data:
@@ -85,22 +71,6 @@ class GroupRule:
         underline_ranks = _parse_rank_list(data.get("underline"))
         italic_ranks = _parse_rank_list(data.get("italic"))
 
-        # Legacy flags: bold_highest / bold_lowest / underline_highest / underline_lowest
-        bold_highest = bool(data.get("bold_highest", False))
-        bold_lowest = bool(data.get("bold_lowest", False))
-        underline_highest = bool(data.get("underline_highest", False))
-        underline_lowest = bool(data.get("underline_lowest", False))
-
-        if bold_highest and 1 not in bold_ranks and higher_is_better:
-            bold_ranks.append(1)
-        if bold_lowest and 1 not in bold_ranks and not higher_is_better:
-            bold_ranks.append(1)
-
-        if underline_highest and 1 not in underline_ranks and higher_is_better:
-            underline_ranks.append(1)
-        if underline_lowest and 1 not in underline_ranks and not higher_is_better:
-            underline_ranks.append(1)
-
         # 3. Parse text colors (static string or rank dict)
         color_ranks: dict[int, str] = {}
         raw_color = data.get("color")
@@ -143,43 +113,6 @@ class GroupRule:
                 if suffix.isdigit() and v:
                     cell_color_ranks[int(suffix)] = str(v).strip()
 
-        # Legacy cell_color_highest / lowest / second_highest
-        cell_color_highest = (
-            data.get("cell_color_highest")
-            or data.get("bg_color_highest")
-            or data.get("bg_highest")
-        )
-        if cell_color_highest is not None:
-            cell_color_highest = str(cell_color_highest).strip()
-            if higher_is_better and 1 not in cell_color_ranks:
-                cell_color_ranks[1] = cell_color_highest
-
-        cell_color_lowest = (
-            data.get("cell_color_lowest")
-            or data.get("bg_color_lowest")
-            or data.get("bg_lowest")
-        )
-        if cell_color_lowest is not None:
-            cell_color_lowest = str(cell_color_lowest).strip()
-            if not higher_is_better and 1 not in cell_color_ranks:
-                cell_color_ranks[1] = cell_color_lowest
-
-        cell_color_2nd_highest = data.get("cell_color_second_highest") or data.get(
-            "bg_second_highest"
-        )
-        if cell_color_2nd_highest is not None:
-            cell_color_2nd_highest = str(cell_color_2nd_highest).strip()
-            if higher_is_better and 2 not in cell_color_ranks:
-                cell_color_ranks[2] = cell_color_2nd_highest
-
-        cell_color_2nd_lowest = data.get("cell_color_second_lowest") or data.get(
-            "bg_second_lowest"
-        )
-        if cell_color_2nd_lowest is not None:
-            cell_color_2nd_lowest = str(cell_color_2nd_lowest).strip()
-            if not higher_is_better and 2 not in cell_color_ranks:
-                cell_color_ranks[2] = cell_color_2nd_lowest
-
         decimals = data.get("decimals")
         if decimals is not None:
             decimals = int(decimals)
@@ -215,46 +148,6 @@ class GroupRule:
 
         custom_format = data.get("custom_format") or data.get("format")
 
-        def _parse_highlight_list(
-            val: Any, default_flags: list[bool], default_names: list[str]
-        ) -> list[str]:
-            res: list[str] = []
-            for flag, flag_name in zip(default_flags, default_names):
-                if flag and flag_name not in res:
-                    res.append(flag_name)
-            if val:
-                if isinstance(val, str):
-                    for part in val.replace(",", "|").split("|"):
-                        p = part.strip().lower()
-                        if p and p not in res:
-                            res.append(p)
-                elif isinstance(val, (list, tuple)):
-                    for item in val:
-                        p = str(item).strip().lower()
-                        if p and p not in res:
-                            res.append(p)
-                elif isinstance(val, bool) and val:
-                    if "bold" not in res:
-                        res.append("bold")
-            return res
-
-        hl_highest = _parse_highlight_list(
-            data.get("highlight_highest"),
-            [bold_highest, underline_highest],
-            ["bold", "underline"],
-        )
-        hl_lowest = _parse_highlight_list(
-            data.get("highlight_lowest"),
-            [bold_lowest, underline_lowest],
-            ["bold", "underline"],
-        )
-        hl_2nd_highest = _parse_highlight_list(
-            data.get("highlight_second_highest"), [], []
-        )
-        hl_2nd_lowest = _parse_highlight_list(
-            data.get("highlight_second_lowest"), [], []
-        )
-
         return cls(
             name=name,
             higher_is_better=higher_is_better,
@@ -271,18 +164,6 @@ class GroupRule:
             unit=unit,
             styles=styles,
             custom_format=custom_format,
-            bold_highest=bold_highest,
-            bold_lowest=bold_lowest,
-            underline_highest=underline_highest,
-            underline_lowest=underline_lowest,
-            highlight_highest=hl_highest,
-            highlight_lowest=hl_lowest,
-            highlight_second_highest=hl_2nd_highest,
-            highlight_second_lowest=hl_2nd_lowest,
-            cell_color_highest=cell_color_highest,
-            cell_color_lowest=cell_color_lowest,
-            cell_color_second_highest=cell_color_2nd_highest,
-            cell_color_second_lowest=cell_color_2nd_lowest,
         )
 
 

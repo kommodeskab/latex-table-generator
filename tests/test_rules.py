@@ -23,13 +23,15 @@ def test_rules_config_from_yaml():
     yaml_content = """
 groups:
   acc_group:
+    higher_is_better: true
     decimals: 3
-    bold_highest: true
-    underline_lowest: true
+    bold: 1
+    underline: 2
     color: "blue"
   lat_group:
+    higher_is_better: false
     decimals: 1
-    bold_lowest: true
+    bold: 1
     color: "#FF5733"
 default:
   decimals: 2
@@ -40,13 +42,14 @@ default:
 
     acc_rule = config.get_rule("acc_group")
     assert acc_rule.decimals == 3
-    assert acc_rule.bold_highest is True
-    assert acc_rule.underline_lowest is True
+    assert acc_rule.bold == [1]
+    assert acc_rule.underline == [2]
     assert acc_rule.color == "blue"
 
     lat_rule = config.get_rule("lat_group")
     assert lat_rule.decimals == 1
-    assert lat_rule.bold_lowest is True
+    assert lat_rule.higher_is_better is False
+    assert lat_rule.bold == [1]
     assert lat_rule.color == "#FF5733"
 
     assert config.default_rule.decimals == 2
@@ -80,13 +83,15 @@ def test_highlight_highest_lowest_ignoring_uncertainty(sample_metrics):
         {
             "groups": {
                 "accuracy": {
+                    "higher_is_better": True,
                     "decimals": 2,
-                    "bold_highest": True,
-                    "underline_lowest": True,
+                    "bold": 1,
+                    "underline": 3,
                 },
                 "latency": {
+                    "higher_is_better": False,
                     "decimals": 1,
-                    "bold_lowest": True,
+                    "bold": 1,
                 },
             }
         }
@@ -101,9 +106,9 @@ def test_highlight_highest_lowest_ignoring_uncertainty(sample_metrics):
     renderer = TemplateRenderer(sample_metrics, rules=rules)
     result = renderer.render(template)
 
-    # Model B has highest accuracy (0.8856) -> bold
-    # Model A has lowest accuracy (0.7512) -> underline
-    # Model A has lowest latency (12.4) -> bold
+    # Model B has highest accuracy (0.8856) -> bold (Rank 1)
+    # Model A has lowest accuracy (0.7512) -> underline (Rank 3)
+    # Model A has lowest latency (12.4) -> bold (Rank 1 when higher_is_better=False)
     assert (
         r"Model A & \underline{0.75 \ensuremath{\pm} 0.01} & \textbf{12.4} \\" in result
     )
@@ -137,8 +142,9 @@ def test_multiple_groups_per_cell(sample_metrics):
         {
             "groups": {
                 "col_acc": {
+                    "higher_is_better": True,
                     "decimals": 3,
-                    "bold_highest": True,
+                    "bold": 1,
                 },
                 "best_model": {
                     "color": "ForestGreen",
@@ -171,7 +177,7 @@ def test_pipe_group_syntax(sample_metrics):
     rules = RulesConfig.from_dict(
         {
             "groups": {
-                "acc": {"decimals": 2, "bold_highest": True},
+                "acc": {"higher_is_better": True, "decimals": 2, "bold": 1},
             }
         }
     )
@@ -213,11 +219,13 @@ def test_end_to_end_rules_file(tmp_path: Path):
         """
 groups:
   acc:
+    higher_is_better: true
     decimals: 2
-    bold_highest: true
+    bold: 1
   lat:
+    higher_is_better: false
     decimals: 1
-    bold_lowest: true
+    bold: 1
     color: "darkgray"
 """,
         encoding="utf-8",
@@ -263,14 +271,17 @@ def test_cell_background_color(sample_metrics):
     )
 
 
-def test_cell_color_highest_and_lowest(sample_metrics):
+def test_cell_color_ranks(sample_metrics):
     rules = RulesConfig.from_dict(
         {
             "groups": {
                 "acc": {
+                    "higher_is_better": True,
                     "decimals": 2,
-                    "cell_color_highest": "green!20",
-                    "cell_color_lowest": "red!15",
+                    "cell_color": {
+                        1: "green!20",
+                        3: "red!15",
+                    },
                 }
             }
         }
@@ -285,9 +296,9 @@ def test_cell_color_highest_and_lowest(sample_metrics):
     renderer = TemplateRenderer(sample_metrics, rules=rules)
     result = renderer.render(template)
 
-    # Model B is highest (0.8856) -> green!20
-    # Model A is lowest (0.7512) -> red!15
-    # Model C is middle (0.8123) -> no cellcolor
+    # Model B is highest (0.8856) -> Rank 1 -> green!20
+    # Model A is lowest (0.7512) -> Rank 3 -> red!15
+    # Model C is middle (0.8123) -> Rank 2 -> no cellcolor
     assert r"Model A & \cellcolor{red!15} 0.75 \ensuremath{\pm} 0.01 \\" in result
     assert r"Model B & \cellcolor{green!20} 0.89 \ensuremath{\pm} 0.01 \\" in result
     assert r"Model C & 0.81 \ensuremath{\pm} 0.01 \\" in result

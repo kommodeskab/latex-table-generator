@@ -52,23 +52,26 @@ Define reusable formatting rules for each group:
 
 ```yaml
 groups:
-  # Accuracy column: 2 decimals, bold highest, underline lowest, blue color
+  # Accuracy column: higher is better, rank 1 is bold, rank 2 is underlined, blue color
   accuracy:
+    higher_is_better: true
+    bold: 1
+    underline: 2
     decimals: 2
-    bold_highest: true
-    underline_lowest: true
     color: "blue"
 
-  # F1 column: 2 decimals, bold highest, navy color
+  # F1 column: higher is better, rank 1 is bold, navy color
   f1:
+    higher_is_better: true
+    bold: 1
     decimals: 2
-    bold_highest: true
     color: "NavyBlue"
 
-  # Latency column: 1 decimal, bold lowest (faster is better!)
+  # Latency column: lower is better (faster is better!), rank 1 is bold
   latency:
+    higher_is_better: false
+    bold: 1
     decimals: 1
-    bold_lowest: true
     color: "darkgray"
 
   # Special tag that can be added to any cell
