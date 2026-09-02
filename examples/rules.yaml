@@ -7,30 +7,39 @@ groups:
     si_prefix: true
     decimals: 1
 
-  # Accuracy group: higher is better, rank 1 is bold, rank 2 is underlined, blue text, green cell for rank 1
+  # Accuracy group: higher is better
+  # Rank 1: bold, green background
+  # Rank 2: underlined
+  # Rank 3: italic
   accuracy:
     higher_is_better: true
     bold: 1
     underline: 2
+    italic: 3
     decimals: 2
     color: "blue"
-    cell_color_1: "green!15"
+    cell_color:
+      1: "green!15"
 
-  # F1-Score group: higher is better, rank 1 is bold, navy text, green cell for rank 1
+  # F1-Score group: higher is better, rank 1 is bold with navy text and green cell
   f1:
     higher_is_better: true
     bold: 1
+    underline: 2
     decimals: 2
     color: "NavyBlue"
-    cell_color_1: "green!15"
+    cell_color:
+      1: "green!15"
 
   # Latency group: lower is better (higher_is_better: false), rank 1 (lowest) is bold with green cell
   latency:
     higher_is_better: false
     bold: 1
+    underline: 2
     decimals: 1
     color: "darkgray"
-    cell_color_1: "green!15"
+    cell_color:
+      1: "green!15"
 
   # Example multi-group tag: highlight full cell background in soft yellow
   top_performer:
