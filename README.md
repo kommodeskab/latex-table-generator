@@ -39,11 +39,11 @@ uv pip install .
 ### 1. Metrics File (`metrics.csv`)
 
 ```csv
-model,accuracy_mean,accuracy_std,f1_mean,f1_std,latency_ms
-ResNet-18,0.7645,0.0123,0.7512,0.0145,12.4
-ResNet-50,0.8123,0.0098,0.8045,0.0112,24.8
-ViT-Base,0.8654,0.0067,0.8591,0.0078,45.2
-Swin-Transformer,0.8812,0.0054,0.8765,0.0061,52.1
+model,acc_mean,acc_std,f1_mean,f1_std,latency
+res18,0.7645,0.0123,0.7512,0.0145,12.4
+res50,0.8123,0.0098,0.8045,0.0112,24.8
+vit,0.8654,0.0067,0.8591,0.0078,45.2
+swin,0.8812,0.0054,0.8765,0.0061,52.1
 ```
 
 ### 2. Group Rules Configuration (`rules.yaml`)
@@ -92,10 +92,10 @@ Assign cells to groups using `[group_name]{...}` or `{... | group_name}`:
 \toprule
 \textbf{Model} & \textbf{Accuracy} & \textbf{F1-Score} & \textbf{Latency (ms)} \\
 \midrule
-ResNet-18 & [accuracy]{ResNet-18.accuracy_mean +- ResNet-18.accuracy_std} & [f1]{ResNet-18.f1_mean +- ResNet-18.f1_std} & [latency]{ResNet-18.latency_ms} \\
-ResNet-50 & [accuracy]{ResNet-50.accuracy_mean +- ResNet-50.accuracy_std} & [f1]{ResNet-50.f1_mean +- ResNet-50.f1_std} & [latency]{ResNet-50.latency_ms} \\
-ViT-Base & [accuracy]{ViT-Base.accuracy_mean +- ViT-Base.accuracy_std} & [f1]{ViT-Base.f1_mean +- ViT-Base.f1_std} & [latency]{ViT-Base.latency_ms} \\
-\textbf{Swin-Transformer} & [accuracy, top_performer]{Swin-Transformer.accuracy_mean +- Swin-Transformer.accuracy_std} & [f1, top_performer]{Swin-Transformer.f1_mean +- Swin-Transformer.f1_std} & [latency]{Swin-Transformer.latency_ms} \\
+ResNet-18 & [accuracy]{res18.acc_mean +- res18.acc_std} & [f1]{res18.f1_mean +- res18.f1_std} & [latency]{res18.latency} \\
+ResNet-50 & [accuracy]{res50.acc_mean +- res50.acc_std} & [f1]{res50.f1_mean +- res50.f1_std} & [latency]{res50.latency} \\
+ViT-Base & [accuracy]{vit.acc_mean +- vit.acc_std} & [f1]{vit.f1_mean +- vit.f1_std} & [latency]{vit.latency} \\
+\textbf{Swin-Transformer} & [accuracy, top_performer]{swin.acc_mean +- swin.acc_std} & [f1, top_performer]{swin.f1_mean +- swin.f1_std} & [latency]{swin.latency} \\
 \bottomrule
 \end{tabular}
 \end{table}
