@@ -160,6 +160,11 @@ fetch_wandb_metrics(
     metric_names=["loss"],
     # Optional: threshold before raising a warning for large number of runs (default 50)
     warn_threshold=50,
+    # Optional: show disappearing tqdm progress bar (default True)
+    show_progress=True,
+    # Optional: enable local disk caching to avoid repeated network requests (default True)
+    use_cache=True,
+    cache_dir=".wandb_cache",
 )
 
 # Option B: Fetch specific run IDs
@@ -169,6 +174,7 @@ fetch_wandb_metrics(
     output_path="wandb_metrics.csv",
     # Optional: override model names (defaults to WandB run names)
     run_names=[],
+    use_cache=True,
 )
 ```
 

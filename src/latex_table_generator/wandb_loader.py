@@ -1,15 +1,111 @@
-"""WandB integration for fetching run metrics and saving them to CSV files."""
+"""WandB integration for fetching run metrics, caching, and saving them to CSV files."""
 
 from __future__ import annotations
 
 import csv
 import io
+import json
 import os
 import warnings
 from pathlib import Path
-from typing import Any, Sequence
+from typing import Any, Mapping, Sequence
 
 from dotenv import load_dotenv
+from tqdm.auto import tqdm
+
+
+def _to_json_safe_dict(d: Any) -> dict[str, Any]:
+    """Convert a dictionary or dict-like object to JSON-safe primitives."""
+    if not d:
+        return {}
+    if hasattr(d, "_json_dict") and isinstance(d._json_dict, dict):
+        d = d._json_dict
+    elif not isinstance(d, dict):
+        try:
+            d = dict(d)
+        except Exception:
+            return {}
+
+    safe: dict[str, Any] = {}
+    for k, v in d.items():
+        if isinstance(v, (int, float, str, bool, type(None))):
+            safe[str(k)] = v
+        elif hasattr(v, "item"):
+            try:
+                safe[str(k)] = v.item()
+            except Exception:
+                safe[str(k)] = str(v)
+        elif isinstance(v, (list, tuple)):
+            safe[str(k)] = [
+                x if isinstance(x, (int, float, str, bool, type(None))) else str(x)
+                for x in v
+            ]
+        elif isinstance(v, dict):
+            safe[str(k)] = _to_json_safe_dict(v)
+        else:
+            safe[str(k)] = str(v)
+    return safe
+
+
+def _get_cache_file(cache_dir: Path, run_id: str) -> Path:
+    """Return the cache file path for a run ID."""
+    sanitized_id = "".join(c if c.isalnum() or c in "-_" else "_" for c in run_id)
+    return cache_dir / f"{sanitized_id}.json"
+
+
+def _read_cached_run(
+    cache_dir: Path,
+    run_id: str,
+    metrics: Sequence[str],
+) -> dict[str, Any] | None:
+    """Read cached run data if available and contains all requested metrics."""
+    cache_file = _get_cache_file(cache_dir, run_id)
+    if not cache_file.exists():
+        return None
+
+    try:
+        data = json.loads(cache_file.read_text(encoding="utf-8"))
+        if not isinstance(data, dict):
+            return None
+
+        summary = data.get("summary", {})
+        config = data.get("config", {})
+
+        # Check if all requested metrics are available in cached summary or config
+        for m in metrics:
+            if m not in summary and m not in config:
+                return None
+
+        return data
+    except Exception:
+        return None
+
+
+def _write_cached_run(
+    cache_dir: Path,
+    run_id: str,
+    name: str,
+    summary: Mapping[str, Any] | None,
+    config: Mapping[str, Any] | None,
+    entity: str | None = None,
+    project: str | None = None,
+) -> None:
+    """Write run metadata and metrics to local JSON cache."""
+    try:
+        cache_dir.mkdir(parents=True, exist_ok=True)
+        cache_file = _get_cache_file(cache_dir, run_id)
+
+        data = {
+            "id": run_id,
+            "name": name,
+            "entity": entity,
+            "project": project,
+            "summary": _to_json_safe_dict(summary),
+            "config": _to_json_safe_dict(config),
+        }
+        cache_file.write_text(json.dumps(data, indent=2), encoding="utf-8")
+    except Exception:
+        pass
 
 
 def fetch_wandb_metrics(
@@ -25,9 +121,13 @@ def fetch_wandb_metrics(
     id_column: str = "id",
     model_column: str = "model",
     warn_threshold: int = 50,
+    show_progress: bool = True,
+    use_cache: bool = True,
+    cache_dir: str | Path = ".wandb_cache",
+    force_refresh: bool = False,
     **kwargs: Any,
 ) -> str:
-    """Fetch metrics from Weights & Biases (WandB) runs and save them to a CSV file.
+    """Fetch metrics from Weights & Biases (WandB) runs, cache them locally, and save to CSV.
 
     Parameters
     ----------
@@ -55,26 +155,19 @@ def fetch_wandb_metrics(
         Name of the column storing model/run names in the CSV.
     warn_threshold : int, default 50
         Threshold for number of runs before raising a warning about long fetch times.
+    show_progress : bool, default True
+        Whether to show a tqdm progress bar while loading runs (disappears when done).
+    use_cache : bool, default True
+        Whether to cache run metrics to local disk to avoid repeated network calls.
+    cache_dir : str or Path, default '.wandb_cache'
+        Directory where cached run JSON files will be stored.
+    force_refresh : bool, default False
+        If True, ignores local cache and re-fetches fresh data from WandB.
 
     Returns
     -------
     str
         The generated CSV content as a string.
-
-    Examples
-    --------
-    >>> # Fetch all runs from a project:
-    >>> csv_content = fetch_wandb_metrics(
-    ...     project="denoising_test",
-    ...     metrics=["test_loss"],
-    ...     output_path="wandb_metrics.csv",
-    ... )
-    >>> # Fetch specific run IDs:
-    >>> csv_content = fetch_wandb_metrics(
-    ...     run_ids=["300826143817", "300826145103"],
-    ...     metrics=["test_loss"],
-    ...     output_path="wandb_metrics.csv",
-    ... )
     """
     import wandb
 
@@ -92,7 +185,6 @@ def fetch_wandb_metrics(
         and isinstance(metrics, Sequence)
         and not isinstance(metrics, str)
     ):
-        # Check if first positional argument was actually run_ids and second was metrics
         if "metrics" in kwargs:
             effective_run_ids = metrics
             effective_metrics = kwargs["metrics"]
@@ -101,6 +193,8 @@ def fetch_wandb_metrics(
         raise ValueError(
             "The 'metrics' argument must be provided as a list of metric names."
         )
+
+    cache_dir_path = Path(cache_dir)
 
     # 1. Load environment variables from .env if present
     if env_file:
@@ -116,10 +210,16 @@ def fetch_wandb_metrics(
     effective_api_key = api_key or os.getenv("WANDB_API_KEY")
     effective_entity = entity or os.getenv("WANDB_ENTITY")
 
-    if effective_api_key:
-        api = wandb.Api(api_key=effective_api_key)
-    else:
-        api = wandb.Api()
+    api: wandb.Api | None = None
+
+    def _get_api() -> wandb.Api:
+        nonlocal api
+        if api is None:
+            if effective_api_key:
+                api = wandb.Api(api_key=effective_api_key)
+            else:
+                api = wandb.Api()
+        return api
 
     # 3. Resolve column headers for metrics
     col_headers: list[str] = []
@@ -132,8 +232,8 @@ def fetch_wandb_metrics(
     else:
         col_headers = [str(m).strip() for m in effective_metrics]
 
-    # 4. Fetch runs
-    run_objects: list[Any] = []
+    # 4. Fetch runs data
+    extracted_runs: list[dict[str, Any]] = []
 
     # Case A: project is given and run_ids is omitted -> fetch all runs from project
     if (effective_run_ids is None or len(effective_run_ids) == 0) and effective_project:
@@ -142,59 +242,119 @@ def fetch_wandb_metrics(
             if effective_entity
             else effective_project
         )
-        runs_query = api.runs(project_path)
-        run_objects = list(runs_query)
+        api_inst = _get_api()
+        runs_query = api_inst.runs(project_path)
+        raw_runs = list(runs_query)
 
-        if len(run_objects) > warn_threshold:
+        if len(raw_runs) > warn_threshold:
             warnings.warn(
-                f"WandB project '{effective_project}' contains {len(run_objects)} runs "
+                f"WandB project '{effective_project}' contains {len(raw_runs)} runs "
                 f"(warning threshold is {warn_threshold}). "
                 f"Fetching metrics for a large number of runs may take longer.",
                 UserWarning,
                 stacklevel=2,
             )
 
+        progress_bar = tqdm(
+            raw_runs,
+            desc=f"Loading WandB runs ({effective_project})",
+            leave=False,
+            disable=not show_progress,
+        )
+
+        for run_obj in progress_bar:
+            run_id_str = str(run_obj.id).strip()
+            name_str = str(run_obj.name).strip() if run_obj.name else run_id_str
+
+            summary_dict = (
+                run_obj.summary._json_dict
+                if hasattr(run_obj.summary, "_json_dict")
+                else (dict(run_obj.summary) if hasattr(run_obj, "summary") else {})
+            )
+            config_dict = dict(run_obj.config) if hasattr(run_obj, "config") else {}
+
+            if use_cache:
+                _write_cached_run(
+                    cache_dir=cache_dir_path,
+                    run_id=run_id_str,
+                    name=name_str,
+                    summary=summary_dict,
+                    config=config_dict,
+                    entity=effective_entity,
+                    project=effective_project,
+                )
+
+            extracted_runs.append(
+                {
+                    "id": run_id_str,
+                    "name": name_str,
+                    "summary": summary_dict,
+                    "config": config_dict,
+                }
+            )
+
     # Case B: explicit run_ids provided
     elif effective_run_ids:
-        # Cache available projects if needed
         cached_projects: list[str] = []
         if effective_project:
             cached_projects = [effective_project]
-        elif effective_entity:
-            try:
-                cached_projects = [p.name for p in api.projects(effective_entity)]
-            except Exception:
-                cached_projects = []
-
         last_successful_project: str | None = effective_project
 
-        for run_id_raw in effective_run_ids:
+        progress_bar = tqdm(
+            effective_run_ids,
+            desc="Loading WandB runs",
+            leave=False,
+            disable=not show_progress,
+        )
+
+        for run_id_raw in progress_bar:
             run_id_str = str(run_id_raw).strip()
+
+            # Check local cache first if enabled and not force_refresh
+            cached_data = None
+            if use_cache and not force_refresh:
+                cached_data = _read_cached_run(
+                    cache_dir_path, run_id_str, effective_metrics
+                )
+
+            if cached_data is not None:
+                extracted_runs.append(cached_data)
+                continue
+
+            # Not cached or refresh requested -> reach out to WandB API
+            api_inst = _get_api()
             found_run = None
 
-            # Try direct path if run_id contains slashes
             if "/" in run_id_str:
                 try:
-                    found_run = api.run(run_id_str)
+                    found_run = api_inst.run(run_id_str)
                 except Exception:
                     pass
 
-            # Try last successful project
             if not found_run and last_successful_project and effective_entity:
                 try:
-                    found_run = api.run(
+                    found_run = api_inst.run(
                         f"{effective_entity}/{last_successful_project}/{run_id_str}"
                     )
                 except Exception:
                     pass
 
-            # Search across projects
             if not found_run and effective_entity:
+                if not cached_projects:
+                    try:
+                        cached_projects = [
+                            p.name for p in api_inst.projects(effective_entity)
+                        ]
+                    except Exception:
+                        cached_projects = []
+
                 for proj in cached_projects:
                     if proj == last_successful_project:
                         continue
                     try:
-                        found_run = api.run(f"{effective_entity}/{proj}/{run_id_str}")
+                        found_run = api_inst.run(
+                            f"{effective_entity}/{proj}/{run_id_str}"
+                        )
                         last_successful_project = proj
                         break
                     except Exception:
@@ -206,7 +366,33 @@ def fetch_wandb_metrics(
                     f"(checked projects: {cached_projects})."
                 )
 
-            run_objects.append(found_run)
+            name_str = str(found_run.name).strip() if found_run.name else run_id_str
+            summary_dict = (
+                found_run.summary._json_dict
+                if hasattr(found_run.summary, "_json_dict")
+                else (dict(found_run.summary) if hasattr(found_run, "summary") else {})
+            )
+            config_dict = dict(found_run.config) if hasattr(found_run, "config") else {}
+
+            if use_cache:
+                _write_cached_run(
+                    cache_dir=cache_dir_path,
+                    run_id=run_id_str,
+                    name=name_str,
+                    summary=summary_dict,
+                    config=config_dict,
+                    entity=effective_entity,
+                    project=last_successful_project,
+                )
+
+            extracted_runs.append(
+                {
+                    "id": run_id_str,
+                    "name": name_str,
+                    "summary": summary_dict,
+                    "config": config_dict,
+                }
+            )
 
     else:
         raise ValueError(
@@ -216,31 +402,30 @@ def fetch_wandb_metrics(
     # 5. Extract rows for each run
     rows_data: list[dict[str, Any]] = []
 
-    for idx, run_obj in enumerate(run_objects):
-        run_id_str = str(run_obj.id).strip()
+    for idx, run_info in enumerate(extracted_runs):
+        run_id_str = run_info["id"]
 
         # Determine model name
         if run_names and idx < len(run_names) and run_names[idx]:
             model_name = str(run_names[idx]).strip()
         else:
-            model_name = str(run_obj.name).strip() if run_obj.name else run_id_str
+            model_name = str(run_info.get("name") or run_id_str)
 
-        # Extract metric values
         row_dict: dict[str, Any] = {
             model_column: model_name,
             id_column: run_id_str,
         }
 
+        summary = run_info.get("summary", {})
+        config = run_info.get("config", {})
+
         for orig_metric, target_col in zip(effective_metrics, col_headers):
             val: Any = None
-            if hasattr(run_obj, "summary") and orig_metric in run_obj.summary:
-                val = run_obj.summary[orig_metric]
-            elif hasattr(run_obj, "config") and orig_metric in run_obj.config:
-                val = run_obj.config[orig_metric]
-            elif hasattr(run_obj, "summary") and hasattr(run_obj.summary, "_json_dict"):
-                val = run_obj.summary._json_dict.get(orig_metric)
+            if orig_metric in summary:
+                val = summary[orig_metric]
+            elif orig_metric in config:
+                val = config[orig_metric]
 
-            # Convert numpy / torch tensors or NaN if needed
             if hasattr(val, "item"):
                 val = val.item()
 

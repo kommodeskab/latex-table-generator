@@ -137,6 +137,37 @@ def test_fetch_wandb_metrics_file_output(mock_wandb_api, tmp_path: Path):
     assert "snr loss,run_001,0.42" in content
 
 
+def test_fetch_wandb_metrics_caching(mock_wandb_api, tmp_path: Path):
+    cache_dir = tmp_path / "custom_cache"
+    with patch("wandb.Api", return_value=mock_wandb_api):
+        # 1. First fetch: populates cache
+        csv_1 = fetch_wandb_metrics(
+            run_ids=["run_001"],
+            metrics=["test_loss"],
+            cache_dir=cache_dir,
+            use_cache=True,
+            show_progress=False,
+            entity="test_entity",
+        )
+
+    assert (cache_dir / "run_001.json").exists()
+
+    # 2. Second fetch: should read from cache without calling mock_wandb_api.run again
+    mock_wandb_api.run.reset_mock()
+    with patch("wandb.Api", return_value=mock_wandb_api):
+        csv_2 = fetch_wandb_metrics(
+            run_ids=["run_001"],
+            metrics=["test_loss"],
+            cache_dir=cache_dir,
+            use_cache=True,
+            show_progress=False,
+            entity="test_entity",
+        )
+
+    mock_wandb_api.run.assert_not_called()
+    assert csv_1 == csv_2
+
+
 @pytest.mark.skipif(
     not os.getenv("WANDB_API_KEY"),
     reason="Live WandB API key not available in environment",
@@ -145,6 +176,7 @@ def test_live_wandb_fetch():
     csv_out = fetch_wandb_metrics(
         run_ids=["300826143817", "300826145103"],
         metrics=["test_loss"],
+        show_progress=False,
     )
     reader = list(csv.DictReader(io.StringIO(csv_out)))
     assert len(reader) == 2
@@ -161,6 +193,7 @@ def test_live_wandb_fetch_by_project():
     csv_out = fetch_wandb_metrics(
         project="denoising_test",
         metrics=["test_loss"],
+        show_progress=False,
     )
     reader = list(csv.DictReader(io.StringIO(csv_out)))
     assert len(reader) >= 2

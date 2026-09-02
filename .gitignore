@@ -11,3 +11,6 @@ wheels/
 
 # environment variables
 .env
+
+# WandB Cache
+.wandb_cache/
