@@ -1,0 +1,31 @@
+# Group rules configuration for LaTeX table generator
+groups:
+  # Accuracy group: 2 decimals, bold highest, underline lowest, blue text, light-green cell for highest
+  accuracy:
+    decimals: 2
+    bold_highest: true
+    underline_lowest: true
+    color: "blue"
+    cell_color_highest: "green!15"
+
+  # F1-Score group: 2 decimals, bold highest, navy text, light-green cell for highest
+  f1:
+    decimals: 2
+    bold_highest: true
+    color: "NavyBlue"
+    cell_color_highest: "green!15"
+
+  # Latency group: 1 decimal, bold lowest, dark gray text, light-green cell for lowest
+  latency:
+    decimals: 1
+    bold_lowest: true
+    color: "darkgray"
+    cell_color_lowest: "green!15"
+
+  # Example multi-group tag: highlight full cell background in soft yellow
+  top_performer:
+    cell_color: "yellow!25"
+    color: "ForestGreen"
+
+default:
+  decimals: 2

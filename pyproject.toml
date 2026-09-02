@@ -1,0 +1,23 @@
+[project]
+name = "latex-table-generator"
+version = "0.1.0"
+description = "Generate customizable LaTeX tables from CSV metrics and template files"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "pyyaml>=6.0.3",
+]
+
+[project.scripts]
+latex-table-generator = "latex_table_generator.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "pre-commit>=4.6.2",
+    "pytest>=9.1.1",
+    "ruff>=0.16.5",
+]

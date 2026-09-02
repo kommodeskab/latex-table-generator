@@ -1,0 +1,15 @@
+\begin{table}[htbp]
+\centering
+\caption{Classification performance comparison on benchmark dataset.}
+\label{tab:model_comparison}
+\begin{tabular}{lccc}
+\toprule
+\textbf{Model} & \textbf{Accuracy} & \textbf{F1-Score} & \textbf{Latency (ms)} \\
+\midrule
+ResNet-18 & [accuracy]{ResNet-18.accuracy_mean +- ResNet-18.accuracy_std} & [f1]{ResNet-18.f1_mean +- ResNet-18.f1_std} & [latency]{ResNet-18.latency_ms} \\
+ResNet-50 & [accuracy]{ResNet-50.accuracy_mean +- ResNet-50.accuracy_std} & [f1]{ResNet-50.f1_mean +- ResNet-50.f1_std} & [latency]{ResNet-50.latency_ms} \\
+ViT-Base & [accuracy]{ViT-Base.accuracy_mean +- ViT-Base.accuracy_std} & [f1]{ViT-Base.f1_mean +- ViT-Base.f1_std} & [latency]{ViT-Base.latency_ms} \\
+\textbf{Swin-Transformer} & [accuracy, top_performer]{Swin-Transformer.accuracy_mean +- Swin-Transformer.accuracy_std} & [f1, top_performer]{Swin-Transformer.f1_mean +- Swin-Transformer.f1_std} & [latency]{Swin-Transformer.latency_ms} \\
+\bottomrule
+\end{tabular}
+\end{table}

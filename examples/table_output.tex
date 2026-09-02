@@ -1,0 +1,15 @@
+\begin{table}[htbp]
+\centering
+\caption{Classification performance comparison on benchmark dataset.}
+\label{tab:model_comparison}
+\begin{tabular}{lccc}
+\toprule
+\textbf{Model}            & \textbf{Accuracy}                                                          & \textbf{F1-Score}                                                              & \textbf{Latency (ms)} \\
+\midrule
+ResNet-18                 & \textcolor{blue}{\underline{0.76 \ensuremath{\pm} 0.01}}                   & \textcolor{NavyBlue}{0.75 \ensuremath{\pm} 0.01}                               & \cellcolor{green!15} \textcolor{darkgray}{\textbf{12.4}} \\
+ResNet-50                 & \textcolor{blue}{0.81 \ensuremath{\pm} 0.01}                               & \textcolor{NavyBlue}{0.80 \ensuremath{\pm} 0.01}                               & \textcolor{darkgray}{24.8} \\
+ViT-Base                  & \textcolor{blue}{0.87 \ensuremath{\pm} 0.01}                               & \textcolor{NavyBlue}{0.86 \ensuremath{\pm} 0.01}                               & \textcolor{darkgray}{45.2} \\
+\textbf{Swin-Transformer} & \cellcolor{green!15} \textcolor{blue}{\textbf{0.88 \ensuremath{\pm} 0.01}} & \cellcolor{green!15} \textcolor{NavyBlue}{\textbf{0.88 \ensuremath{\pm} 0.01}} & \textcolor{darkgray}{52.1} \\
+\bottomrule
+\end{tabular}
+\end{table}
