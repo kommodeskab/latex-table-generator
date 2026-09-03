@@ -209,22 +209,55 @@ drifting loss,300826145103,0.6875496506690979
 ```yaml
 groups:
   group_name:
-    higher_is_better: true         # Set true for accuracy/F1, false for error/loss/latency
-    bold: 1                        # Rank(s) to bold: 1 = best, -1 = worst, [1, 2] = top 2
+    higher_is_better: true         # Direction: true for metrics like Accuracy/F1, false for Loss/Latency
+    bold: 1                        # Rank(s) to bold: 1 = best, -1 = worst, [1, 2] = top 2, [1, -1] = best & worst
     underline: 2                   # Rank(s) to underline: 2 = 2nd best, -1 = worst
     italic: -2                     # Rank(s) to italicize: -1 = worst, -2 = 2nd worst
-    decimals: 2                    # Precision for numbers in this group
+    decimals: 2                    # Fixed decimal places (e.g. 0.88)
     si_prefix: true                # Auto-scale with SI prefixes (175000000 -> 175.0M, 0.000025 -> 25.0µs)
-    auto_scale: "binary"           # Or "binary" / "iec" for base-1024 (e.g., 16.0GiB)
-    scale: 100                     # Manual multiplier (e.g. 100 for percentages: 0.8812 -> 88.12)
-    unit: "B"                      # Unit suffix (e.g. "B", "FLOPs", "s", "%")
-    color: "blue"                  # Static text color or rank mapping (e.g. {-1: "red"})
-    cell_color: "yellow!25"        # Static background color or rank mapping (e.g. {1: "green!15", -1: "red!15"})
-    cell_color_1: "green!15"       # Background color for rank 1 (best)
-    cell_color_2: "yellow!15"      # Background color for rank 2 (second best)
-    align_numbers: true            # Align decimal points and minus signs (default: true)
-    styles: ["italic"]             # Static styles applied to all cells in group
+    auto_scale: "binary"           # Auto-scale mode: true/"decimal"/"si" (base 1000) or "binary"/"iec" (base 1024)
+    scale: 100                     # Multiplier applied before formatting (e.g. 100 to display percentages)
+    unit: "%"                      # Unit suffix appended to values (e.g. "%", " ms", " dB", "M")
+    color: "blue"                  # Static text color, or rank mapping: {1: "blue", -1: "red"}
+    cell_color: "yellow!25"        # Static cell background, or rank mapping: {1: "green!15", -1: "red!15"}
+    cell_color_1: "green!15"       # Convenience shortcut for rank 1 cell background
+    cell_color_2: "yellow!15"      # Convenience shortcut for rank 2 cell background
+    styles: ["italic"]             # Static styles applied to all cells in group (["bold", "italic", "underline"])
+    custom_format: "{:.1f}"        # Optional Python format string
+    align_numbers: true            # Align minus signs, decimal points, and +- signs (default: true)
+
+default:                           # Global fallback options applied to all ungrouped/grouped cells
+  decimals: 2
+  align_numbers: true
 ```
+
+#### Rule Options Reference
+
+| Option | Type / Format | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `higher_is_better` | `bool` | `true` | Determines ranking order. If `true`, highest value is rank 1; if `false`, lowest value is rank 1. |
+| `bold` | `int`, `list[int]`, `bool` | `[]` | Rank(s) to bold. `1` = best, `-1` = worst, `[1, 2]` = top 2, `true` = rank 1. |
+| `underline` | `int`, `list[int]`, `bool` | `[]` | Rank(s) to underline. `2` = 2nd best, `-1` = worst, etc. |
+| `italic` | `int`, `list[int]`, `bool` | `[]` | Rank(s) to italicize. `3` = 3rd best, `-1` = worst, `-2` = 2nd worst, etc. |
+| `decimals` | `int` | `None` | Number of decimal places to display (e.g., `2` yields `0.88`). |
+| `si_prefix` / `auto_scale` | `bool` or `str` | `None` | Automatically scales large/small numbers with SI prefixes. `true`/`"si"`/`"decimal"` uses base-1000 (`k`, `M`, `G`, `µ`, etc.); `"binary"`/`"iec"` uses base-1024 (`Ki`, `Mi`, `Gi`). |
+| `scale` | `float` | `None` | Multiplier applied to values before formatting (e.g., `100` converts `0.85` to `85.0`). |
+| `unit` | `str` | `None` | Unit suffix appended after the number and any uncertainty (e.g. `dB`, `ms`, `%`). |
+| `color` | `str` or `dict[int, str]` | `None` | Text color. Can be a static color name/hex (e.g. `"blue"`, `"#336699"`) or a rank dictionary (e.g. `{1: "ForestGreen", -1: "red"}`). |
+| `cell_color` | `str` or `dict[int, str]` | `None` | Cell background color using LaTeX `\cellcolor`. Can be a static color name/hex or a rank dictionary (e.g. `{1: "green!15", -1: "red!15"}`). |
+| `cell_color_<N>` | `str` | `None` | Shortcut to assign background color for rank `N` (e.g. `cell_color_1: "green!15"`). |
+| `styles` | `list[str]` or `str` | `[]` | Static styles applied unconditionally to all cells in the group (e.g., `["italic"]`). |
+| `custom_format` | `str` | `None` | Custom Python format string (e.g., `"{:.2f}%"`). |
+| `align_numbers` | `bool` | `true` | Automatically aligns decimal points, minus signs, and plus-minus (`\pm`) signs in columns without shifting. Set `false` to opt out. |
+
+#### Rank Indexing & Direction
+
+- **Positive integers (`1, 2, 3, ...`)**: Count from the **best** model (1 = best, 2 = second best, etc.).
+- **Negative integers (`-1, -2, -3, ...`)**: Count from the **worst** model (-1 = worst, -2 = second worst, etc.).
+- **Ties**: If multiple models share the same rounded value, all tied models receive the assigned style/color.
+- **Direction**:
+  - When `higher_is_better: true`: Highest value is rank `1`, lowest is rank `-1`.
+  - When `higher_is_better: false`: Lowest value is rank `1` (e.g. lowest latency), highest is rank `-1` (worst latency).
 
 ---
 
