@@ -110,9 +110,13 @@ def test_highlight_highest_lowest_ignoring_uncertainty(sample_metrics):
     # Model A has lowest accuracy (0.7512) -> underline (Rank 3)
     # Model A has lowest latency (12.4) -> bold (Rank 1 when higher_is_better=False)
     assert (
-        r"Model A & \underline{0.75 \ensuremath{\pm} 0.01} & \textbf{12.4} \\" in result
+        r"Model A & \underline{0.75 \ensuremath{\pm} 0.01} & \phantom{12}\llap{\textbf{12}}\rlap{\textbf{.4}}\phantom{.4} \\"
+        in result
     )
-    assert r"Model B & \textbf{0.89 \ensuremath{\pm} 0.01} & 24.8 \\" in result
+    assert (
+        r"Model B & \phantom{0}\llap{\textbf{0}}\rlap{\textbf{.89 \ensuremath{\pm} 0.01}}\phantom{.89 \ensuremath{\pm} 0.01} & 24.8 \\"
+        in result
+    )
     assert r"Model C & 0.81 \ensuremath{\pm} 0.01 & 45.2 \\" in result
 
 
@@ -167,8 +171,10 @@ def test_multiple_groups_per_cell(sample_metrics):
     # Model B is highest in col_acc (gets bold, 3 decimals) AND in best_model (gets ForestGreen and italic)
     assert "Model A & 0.751 \\\\" in result
     assert (
-        r"Model B & \textcolor{ForestGreen}{\textbf{\textit{0.886}}} \\" in result
-        or r"Model B & \textcolor{ForestGreen}{\textit{\textbf{0.886}}} \\" in result
+        r"Model B & \textcolor{ForestGreen}{\phantom{0}\llap{\textbf{\textit{0}}}\rlap{\textbf{\textit{.886}}}\phantom{.886}} \\"
+        in result
+        or r"Model B & \textcolor{ForestGreen}{\phantom{0}\llap{\textit{\textbf{0}}}\rlap{\textit{\textbf{.886}}}\phantom{.886}} \\"
+        in result
     )
     assert "Model C & 0.812 \\\\" in result
 
@@ -191,7 +197,10 @@ def test_pipe_group_syntax(sample_metrics):
     result = renderer.render(template)
 
     assert r"Model A & 0.75 \ensuremath{\pm} 0.01 \\" in result
-    assert r"Model B & \textbf{0.89 \ensuremath{\pm} 0.01} \\" in result
+    assert (
+        r"Model B & \phantom{0}\llap{\textbf{0}}\rlap{\textbf{.89 \ensuremath{\pm} 0.01}}\phantom{.89 \ensuremath{\pm} 0.01} \\"
+        in result
+    )
 
 
 def test_end_to_end_rules_file(tmp_path: Path):
@@ -241,11 +250,11 @@ groups:
     )
 
     assert (
-        r"M1 & 0.70 \ensuremath{\pm} 0.01 & \textcolor{darkgray}{\textbf{10.0}} \\"
+        r"M1 & 0.70 \ensuremath{\pm} 0.01 & \textcolor{darkgray}{\phantom{10}\llap{\textbf{10}}\rlap{\textbf{.0}}\phantom{.0}} \\"
         in result
     )
     assert (
-        r"M2 & \textbf{0.90 \ensuremath{\pm} 0.02} & \textcolor{darkgray}{30.0} \\"
+        r"M2 & \phantom{0}\llap{\textbf{0}}\rlap{\textbf{.90 \ensuremath{\pm} 0.02}}\phantom{.90 \ensuremath{\pm} 0.02} & \textcolor{darkgray}{30.0} \\"
         in result
     )
     assert out_file.exists()
@@ -340,7 +349,10 @@ def test_rank_based_bold_and_higher_is_better(sample_metrics):
     # Model A has lowest latency (12.4) -> underline
     assert r"Model A & 0.75 & \underline{12.4} \\" in result
     assert r"Model B & 0.89 & 24.8 \\" in result
-    assert r"Model C & \textbf{0.81} & 45.2 \\" in result
+    assert (
+        r"Model C & \phantom{0}\llap{\textbf{0}}\rlap{\textbf{.81}}\phantom{.81} & 45.2 \\"
+        in result
+    )
 
 
 def test_rank_based_multiple_ranks_and_colors(sample_metrics):
@@ -370,7 +382,10 @@ def test_rank_based_multiple_ranks_and_colors(sample_metrics):
     # Model B is Rank 1 -> bold & cell_color green!20
     # Model C is Rank 2 -> underline & cell_color yellow!15
     assert r"Model A & 0.75 \\" in result
-    assert r"Model B & \cellcolor{green!20} \textbf{0.89} \\" in result
+    assert (
+        r"Model B & \cellcolor{green!20} \phantom{0}\llap{\textbf{0}}\rlap{\textbf{.89}}\phantom{.89} \\"
+        in result
+    )
     assert r"Model C & \cellcolor{yellow!15} \underline{0.81} \\" in result
 
 
@@ -418,8 +433,14 @@ def test_rounded_value_ranking_ties():
     # Both Model A (0.88) and Model B (0.88) get bold
     # Model C (0.85) gets underline
     # In error (lower is better, 1 decimal): Model A (12.4) and Model B (12.4) both get bold!
-    assert r"Model A & \textbf{0.88} & \textbf{12.4} \\" in result
-    assert r"Model B & \textbf{0.88} & \textbf{12.4} \\" in result
+    assert (
+        r"Model A & \phantom{0}\llap{\textbf{0}}\rlap{\textbf{.88}}\phantom{.88} & \phantom{12}\llap{\textbf{12}}\rlap{\textbf{.4}}\phantom{.4} \\"
+        in result
+    )
+    assert (
+        r"Model B & \phantom{0}\llap{\textbf{0}}\rlap{\textbf{.88}}\phantom{.88} & \phantom{12}\llap{\textbf{12}}\rlap{\textbf{.4}}\phantom{.4} \\"
+        in result
+    )
     assert r"Model C & \underline{0.85} & 24.8 \\" in result
 
 
@@ -462,9 +483,15 @@ def test_rank_based_italic_styling():
 
     # acc: M1 (0.95) -> bold, M2 (0.90) -> underline, M3 (0.85) -> italic
     # loss: M1 (0.10, lowest) -> italic
-    assert r"M1 & \textbf{0.95} & \textit{0.10} \\" in result
+    assert (
+        r"M1 & \phantom{0}\llap{\textbf{0}}\rlap{\textbf{.95}}\phantom{.95} & \phantom{0}\llap{\textit{0}}\rlap{\textit{.10}}\phantom{.10} \\"
+        in result
+    )
     assert r"M2 & \underline{0.90} & 0.20 \\" in result
-    assert r"M3 & \textit{0.85} & 0.30 \\" in result
+    assert (
+        r"M3 & \phantom{0}\llap{\textit{0}}\rlap{\textit{.85}}\phantom{.85} & 0.30 \\"
+        in result
+    )
 
 
 def test_align_column_numbers_with_minus_and_positives():
@@ -577,3 +604,52 @@ def test_opt_out_align_numbers_via_group_rule():
     # g_normal opted in: M2.col_b is \hphantom{-}5.0
     assert r"M1 & -1.2 & -5.0 \\" in result
     assert r"M2 & 1.2 & \hphantom{-}5.0 \\" in result
+
+
+def test_style_width_alignment_bold_italic_underline():
+    """Verify that bold and italic styles preserve natural unstyled widths so column numbers don't shift."""
+    metrics = MetricsStore(
+        {
+            "M1": {"snr_mean": 9.84, "snr_std": 1.23},
+            "M2": {"snr_mean": -4.43, "snr_std": 2.31},
+            "M3": {"snr_mean": 10.24, "snr_std": 0.76},
+            "M4": {"snr_mean": -18.23, "snr_std": 3.46},
+        }
+    )
+
+    rules = RulesConfig.from_dict(
+        {
+            "groups": {
+                "snr": {
+                    "higher_is_better": True,
+                    "bold": 1,
+                    "underline": 2,
+                    "decimals": 2,
+                }
+            }
+        }
+    )
+
+    template = (
+        "\\begin{tabular}{c}\n"
+        "M1 & [snr]{M1.snr_mean +- M1.snr_std} \\\\\n"
+        "M2 & [snr]{M2.snr_mean +- M2.snr_std} \\\\\n"
+        "M3 & [snr]{M3.snr_mean +- M3.snr_std} \\\\\n"
+        "M4 & [snr]{M4.snr_mean +- M4.snr_std} \\\\\n"
+        "\\end{tabular}"
+    )
+
+    renderer = TemplateRenderer(metrics, rules=rules)
+    result = renderer.render(template)
+
+    # M1 (Rank 2) -> underline (does not change font metrics, so standard underline)
+    assert r"M1 & \hphantom{-0}\underline{9.84 \ensuremath{\pm} 1.23} \\" in result
+    # M2 -> normal negative with phantom zero
+    assert r"M2 & \hphantom{0}-4.43 \ensuremath{\pm} 2.31 \\" in result
+    # M3 (Rank 1) -> bold with zero-width overlay around dot and unstyled phantom widths
+    assert (
+        r"M3 & \hphantom{-}\phantom{10}\llap{\textbf{10}}\rlap{\textbf{.24 \ensuremath{\pm} 0.76}}\phantom{.24 \ensuremath{\pm} 0.76} \\"
+        in result
+    )
+    # M4 -> normal negative
+    assert r"M4 & -18.23 \ensuremath{\pm} 3.46 \\" in result

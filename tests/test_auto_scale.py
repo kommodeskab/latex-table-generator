@@ -124,7 +124,7 @@ def test_group_rules_with_auto_scale_and_units():
     result = renderer.render(template)
 
     assert (
-        r"ResNet-18 & \textbf{11.7M params} & \hphantom{0}1.82GFLOPs & 12.0\ensuremath{\mu}s \\"
+        r"ResNet-18 & \phantom{11}\llap{\textbf{11}}\rlap{\textbf{.7M params}}\phantom{.7M params} & \hphantom{0}1.82GFLOPs & 12.0\ensuremath{\mu}s \\"
         in result
     )
     assert r"Swin & 88.0M params & 15.40GFLOPs & 52.0\ensuremath{\mu}s \\" in result

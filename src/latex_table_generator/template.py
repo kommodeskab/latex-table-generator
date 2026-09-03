@@ -11,6 +11,7 @@ from typing import Any, Mapping
 from latex_table_generator.formatter import (
     _parse_format_spec,
     apply_latex_cell_color,
+    apply_latex_color,
     apply_latex_styles,
     format_uncertainty,
     format_value,
@@ -644,8 +645,75 @@ class TemplateRenderer:
                 if st not in styles:
                     styles.append(st)
 
+        # Check if number alignment is active and should preserve natural font width
+        opt_out_align = not self.align_numbers
+        if not opt_out_align:
+            if self.rules.default_rule.align_numbers is False:
+                opt_out_align = True
+            else:
+                for g in item.groups:
+                    if self.rules.get_rule(g).align_numbers is False:
+                        opt_out_align = True
+                        break
+
+        font_styles = [s for s in styles if s in ("bold", "textbf", "italic", "textit")]
+        has_font_style = bool(font_styles)
+
         # 5. Format string
-        if item.is_uncertainty:
+        if (
+            not opt_out_align
+            and has_font_style
+            and (item.is_uncertainty or not item.is_plain_text)
+        ):
+            # Format unstyled base text to determine natural zero-width alignment boundaries
+            if item.is_uncertainty:
+                raw_text = format_uncertainty(
+                    mean_val=item.val1,
+                    std_val=item.val2,
+                    decimals=decimals,
+                    format_spec=item.format_spec,
+                    pm_symbol=self.pm_symbol,
+                    extra_styles=None,
+                    color=None,
+                    cell_color=None,
+                    auto_scale=auto_scale,
+                    scale=scale,
+                    unit=unit,
+                )
+            else:
+                raw_text = format_value(
+                    val=item.val1,
+                    decimals=decimals,
+                    format_spec=item.format_spec,
+                    extra_styles=None,
+                    color=None,
+                    cell_color=None,
+                    auto_scale=auto_scale,
+                    scale=scale,
+                    unit=unit,
+                )
+
+            non_font_styles = [s for s in styles if s not in font_styles]
+
+            if "." in raw_text:
+                dot_idx = raw_text.find(".")
+                left = raw_text[:dot_idx]
+                right = raw_text[dot_idx:]
+                styled_left = apply_latex_styles(left, styles=font_styles)
+                styled_right = apply_latex_styles(right, styles=font_styles)
+                content = (
+                    f"\\phantom{{{left}}}\\llap{{{styled_left}}}"
+                    f"\\rlap{{{styled_right}}}\\phantom{{{right}}}"
+                )
+            else:
+                styled_left = apply_latex_styles(raw_text, styles=font_styles)
+                content = f"\\phantom{{{raw_text}}}\\llap{{{styled_left}}}"
+
+            if non_font_styles:
+                content = apply_latex_styles(content, styles=non_font_styles)
+            if color:
+                content = apply_latex_color(content, color)
+        elif item.is_uncertainty:
             content = format_uncertainty(
                 mean_val=item.val1,
                 std_val=item.val2,
