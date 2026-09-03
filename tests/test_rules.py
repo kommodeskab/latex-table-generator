@@ -465,3 +465,115 @@ def test_rank_based_italic_styling():
     assert r"M1 & \textbf{0.95} & \textit{0.10} \\" in result
     assert r"M2 & \underline{0.90} & 0.20 \\" in result
     assert r"M3 & \textit{0.85} & 0.30 \\" in result
+
+
+def test_align_column_numbers_with_minus_and_positives():
+    metrics = MetricsStore(
+        {
+            "M1": {"loss": -18.65, "diff": -0.12},
+            "M2": {"loss": 0.69, "diff": 1.45},
+            "M3": {"loss": -2.14, "diff": -3.60},
+        }
+    )
+
+    template = (
+        "\\begin{tabular}{lcc}\n"
+        "Model & Loss & Diff \\\\\n"
+        "M1 & [loss]{M1.loss} & [diff]{M1.diff} \\\\\n"
+        "M2 & [loss]{M2.loss} & [diff]{M2.diff} \\\\\n"
+        "M3 & [loss]{M3.loss} & [diff]{M3.diff} \\\\\n"
+        "\\end{tabular}"
+    )
+
+    rules = RulesConfig.from_dict(
+        {
+            "groups": {
+                "loss": {"decimals": 2},
+                "diff": {"decimals": 2},
+            }
+        }
+    )
+
+    renderer = TemplateRenderer(metrics, rules=rules)
+    result = renderer.render(template)
+
+    # In diff: all have 1 integer digit. M2 is positive, so it gets \hphantom{-}
+    # In loss: max integer digits = 2. M1 is -18.65 (2 digits).
+    # M2 is 0.69 (1 digit, positive) -> gets \hphantom{-0}
+    # M3 is -2.14 (1 digit, negative) -> gets \hphantom{0}
+    assert r"M1 & -18.65 & -0.12 \\" in result
+    assert r"M2 & \hphantom{-0}0.69 & \hphantom{-}1.45 \\" in result
+    assert r"M3 & \hphantom{0}-2.14 & -3.60 \\" in result
+
+
+def test_disable_align_numbers():
+    metrics = MetricsStore(
+        {
+            "M1": {"loss": -18.65},
+            "M2": {"loss": 0.69},
+        }
+    )
+
+    template = "M1 & {M1.loss} \\\\\nM2 & {M2.loss} \\\\"
+
+    # When align_numbers is False, no \hphantom padding is added
+    renderer = TemplateRenderer(metrics, decimals=2, align_numbers=False)
+    result = renderer.render(template)
+
+    assert "M1 & -18.65 \\\\" in result
+    assert "M2 & 0.69 \\\\" in result
+
+
+def test_align_numbers_uncertainties_with_minus():
+    metrics = MetricsStore(
+        {
+            "M1": {"acc_mean": -0.76, "acc_std": 0.01},
+            "M2": {"acc_mean": 0.88, "acc_std": 0.01},
+        }
+    )
+
+    template = (
+        "\\begin{tabular}{lc}\n"
+        "M1 & {M1.acc_mean +- M1.acc_std} \\\\\n"
+        "M2 & {M2.acc_mean +- M2.acc_std} \\\\\n"
+        "\\end{tabular}"
+    )
+
+    renderer = TemplateRenderer(metrics, decimals=2)
+    result = renderer.render(template)
+
+    assert r"M1 & -0.76 \ensuremath{\pm} 0.01 \\" in result
+    assert r"M2 & \hphantom{-}0.88 \ensuremath{\pm} 0.01 \\" in result
+
+
+def test_opt_out_align_numbers_via_group_rule():
+    metrics = MetricsStore(
+        {
+            "M1": {"col_a": -1.2, "col_b": -5.0},
+            "M2": {"col_a": 1.2, "col_b": 5.0},
+        }
+    )
+
+    rules = RulesConfig.from_dict(
+        {
+            "groups": {
+                "g_opt_out": {"align_numbers": False, "decimals": 1},
+                "g_normal": {"decimals": 1},
+            }
+        }
+    )
+
+    template = (
+        "\\begin{tabular}{lcc}\n"
+        "M1 & [g_opt_out]{M1.col_a} & [g_normal]{M1.col_b} \\\\\n"
+        "M2 & [g_opt_out]{M2.col_a} & [g_normal]{M2.col_b} \\\\\n"
+        "\\end{tabular}"
+    )
+
+    renderer = TemplateRenderer(metrics, rules=rules)
+    result = renderer.render(template)
+
+    # g_opt_out opted out: M2.col_a is 1.2 (no phantom)
+    # g_normal opted in: M2.col_b is \hphantom{-}5.0
+    assert r"M1 & -1.2 & -5.0 \\" in result
+    assert r"M2 & 1.2 & \hphantom{-}5.0 \\" in result

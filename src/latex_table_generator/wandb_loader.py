@@ -125,6 +125,7 @@ def fetch_wandb_metrics(
     use_cache: bool = True,
     cache_dir: str | Path = ".wandb_cache",
     force_refresh: bool = False,
+    max_runs: int | None = None,
     **kwargs: Any,
 ) -> str:
     """Fetch metrics from Weights & Biases (WandB) runs, cache them locally, and save to CSV.
@@ -245,6 +246,9 @@ def fetch_wandb_metrics(
         api_inst = _get_api()
         runs_query = api_inst.runs(project_path)
         raw_runs = list(runs_query)
+
+        if max_runs is not None and max_runs > 0:
+            raw_runs = raw_runs[:max_runs]
 
         if len(raw_runs) > warn_threshold:
             warnings.warn(

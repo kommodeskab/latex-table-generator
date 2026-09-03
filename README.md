@@ -14,7 +14,9 @@ A lightweight, flexible Python package to automatically generate publication-rea
   - **Extremum Highlighting**: Automatically bold and/or underline the highest or lowest numbers in each group (ignoring uncertainties for comparison).
   - **Group Text Colors**: Assign custom colors to groups (`blue`, `red`, `ForestGreen`, `#FF5733`).
   - **Multi-group Cells**: Cells can belong to multiple groups and inherit combined rules.
-- **LaTeX Styling & Preservations**: Native support for styling modifiers (`:bold`, `:italic`, `:underline`, `:math`) while preserving all regular LaTeX commands (`\textbf{...}`, `\begin{tabular}`, `\caption{...}`, `\toprule`, etc.).
+- **Automatic Column Number Alignment**: Automatically aligns decimal points, minus signs, and uncertainty symbols across rows (via LaTeX `\hphantom{-}` and digit padding), ensuring publication-grade vertical alignment even when columns mix positive and negative numbers.
+- **LaTeX Styling & Preservations**: Native support for styling modifiers (`:bold`, `:italic`, `:underline`, `:math`) while preserving all regular LaTeX commands (`\textbf{...}`, `\begin{tabular}`, `\begin{threeparttable}`, `\caption{...}`, `\toprule`, etc.).
+- **Automatic Caption Wrapping**: Built-in support for `threeparttable` so long captions cleanly wrap to the exact width of the table.
 - **Neat Column Alignment**: Optional `--align` / `align_columns=True` to neatly format and pad table columns in LaTeX source code.
 - **Direct PDF & PNG Rendering**: Compile tables directly to PDF and trimmed PNG preview images with `compile_table()` or CLI `--pdf` / `--png`.
 
@@ -220,6 +222,7 @@ groups:
     cell_color: "yellow!25"        # Background color for the full group cells
     cell_color_1: "green!15"       # Background color for rank 1 (best)
     cell_color_2: "yellow!15"      # Background color for rank 2 (second best)
+    align_numbers: true            # Align decimal points and minus signs (default: true)
     styles: ["italic"]             # Static styles applied to all cells in group
 ```
 

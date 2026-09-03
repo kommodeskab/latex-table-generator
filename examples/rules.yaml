@@ -41,6 +41,15 @@ groups:
     cell_color:
       1: "green!15"
 
+  snr:
+    higher_is_better: true
+    bold: 1
+    underline: 2
+    decimals: 2
+    color: "purple"
+    cell_color:
+      1: "green!15"
+
   # Example multi-group tag: highlight full cell background in soft yellow
   top_performer:
     cell_color: "yellow!25"

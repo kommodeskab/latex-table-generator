@@ -1,0 +1,20 @@
+\begin{table}[htbp]
+\centering
+\begin{threeparttable}
+\caption{
+Classification performance comparison on benchmark dataset.
+This is a very long caption to test the wrap-around functionality of the caption in the table environment.
+}
+\label{tab:model_comparison}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Model} & \textbf{Params} & \textbf{Accuracy} & \textbf{F1-Score} & \textbf{Latency (ms)} & \textbf{SNR (dB)} \\
+\midrule
+ResNet-18        & [params]{res18.params} & [accuracy]{res18.acc_mean +- res18.acc_std}              & [f1]{res18.f1_mean +- res18.f1_std}              & [latency]{res18.latency}  & [snr]{res18.snr_mean +- res18.snr_std} \\
+ResNet-50        & [params]{res50.params} & [accuracy]{res50.acc_mean +- res50.acc_std}              & [f1]{res50.f1_mean +- res50.f1_std}              & [latency]{res50.latency}  & [snr]{res50.snr_mean +- res50.snr_std} \\
+ViT-Base         & [params]{vit.params}   & [accuracy]{vit.acc_mean +- vit.acc_std}                  & [f1]{vit.f1_mean +- vit.f1_std}                  & [latency]{vit.latency}    & [snr]{vit.snr_mean +- vit.snr_std} \\
+Swin-Transformer & [params]{swin.params}  & [accuracy, top_performer]{swin.acc_mean +- swin.acc_std} & [f1, top_performer]{swin.f1_mean +- swin.f1_std} & [latency]{swin.latency}   & [snr]{swin.snr_mean +- swin.snr_std} \\
+\bottomrule
+\end{tabular}
+\end{threeparttable}
+\end{table}

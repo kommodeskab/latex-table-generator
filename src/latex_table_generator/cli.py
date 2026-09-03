@@ -69,6 +69,13 @@ def create_parser() -> argparse.ArgumentParser:
         help="Neatly align '&' columns in the output LaTeX table.",
     )
     parser.add_argument(
+        "--no-align-numbers",
+        dest="align_numbers",
+        action="store_false",
+        default=True,
+        help="Disable automatic column number alignment (phantom minus & digits).",
+    )
+    parser.add_argument(
         "--delimiter",
         type=str,
         default=",",
@@ -106,6 +113,7 @@ def main(argv: list[str] | None = None) -> int:
             output_path=args.output,
             pm_symbol=args.pm_symbol,
             align_columns=args.align,
+            align_numbers=args.align_numbers,
             delimiter=args.delimiter,
             index_col=index_col,
         )

@@ -27,6 +27,7 @@ class GroupRule:
     unit: str | None = None
     styles: list[str] = field(default_factory=list)
     custom_format: str | None = None
+    align_numbers: bool | None = None
 
     @classmethod
     def from_dict(cls, name: str, data: Mapping[str, Any] | None) -> GroupRule:
@@ -148,6 +149,12 @@ class GroupRule:
 
         custom_format = data.get("custom_format") or data.get("format")
 
+        align_numbers = data.get("align_numbers")
+        if align_numbers is None:
+            align_numbers = data.get("align_decimals")
+        if align_numbers is not None:
+            align_numbers = bool(align_numbers)
+
         return cls(
             name=name,
             higher_is_better=higher_is_better,
@@ -164,6 +171,7 @@ class GroupRule:
             unit=unit,
             styles=styles,
             custom_format=custom_format,
+            align_numbers=align_numbers,
         )
 
 

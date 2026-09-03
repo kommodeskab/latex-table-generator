@@ -19,6 +19,7 @@ def generate_latex_table(
     output_path: str | Path | None = None,
     pm_symbol: str = r"\ensuremath{\pm}",
     align_columns: bool = False,
+    align_numbers: bool = True,
     delimiter: str = ",",
     index_col: int | str = 0,
     encoding: str = "utf-8",
@@ -75,6 +76,7 @@ def generate_latex_table(
         decimals=decimals,
         pm_symbol=pm_symbol,
         align_columns=align_columns,
+        align_numbers=align_numbers,
     )
 
     # Check if template_path is a path to an existing file or a raw template string
@@ -113,6 +115,7 @@ class TableGenerator:
         decimals: int | None = None,
         pm_symbol: str = r"\ensuremath{\pm}",
         align_columns: bool = False,
+        align_numbers: bool = True,
         delimiter: str = ",",
         index_col: int | str = 0,
     ) -> None:
@@ -121,6 +124,7 @@ class TableGenerator:
         self.decimals = decimals
         self.pm_symbol = pm_symbol
         self.align_columns = align_columns
+        self.align_numbers = align_numbers
 
     @classmethod
     def from_csv(
@@ -130,6 +134,7 @@ class TableGenerator:
         decimals: int | None = None,
         pm_symbol: str = r"\ensuremath{\pm}",
         align_columns: bool = False,
+        align_numbers: bool = True,
         delimiter: str = ",",
         index_col: int | str = 0,
     ) -> TableGenerator:
@@ -140,6 +145,7 @@ class TableGenerator:
             decimals=decimals,
             pm_symbol=pm_symbol,
             align_columns=align_columns,
+            align_numbers=align_numbers,
             delimiter=delimiter,
             index_col=index_col,
         )
@@ -152,6 +158,7 @@ class TableGenerator:
             decimals=self.decimals,
             pm_symbol=self.pm_symbol,
             align_columns=self.align_columns,
+            align_numbers=self.align_numbers,
         )
         return renderer.render(template_str)
 
@@ -168,6 +175,7 @@ class TableGenerator:
             decimals=self.decimals,
             pm_symbol=self.pm_symbol,
             align_columns=self.align_columns,
+            align_numbers=self.align_numbers,
         )
         return renderer.render_file(
             template_path, output_path=output_path, encoding=encoding

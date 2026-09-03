@@ -10,6 +10,7 @@ from typing import Any, Mapping
 
 from latex_table_generator.formatter import (
     _parse_format_spec,
+    apply_latex_cell_color,
     apply_latex_styles,
     format_uncertainty,
     format_value,
@@ -134,6 +135,10 @@ class _ItemMatch:
     assigned_styles: list[str] = field(default_factory=list)
     assigned_cell_color: str | None = None
     assigned_color: str | None = None
+    table_idx: int = 0
+    col_idx: int = -1
+    align_prefix: str = ""
+    align_suffix: str = ""
 
 
 class TemplateRenderer:
@@ -146,6 +151,7 @@ class TemplateRenderer:
         decimals: int | None = None,
         pm_symbol: str = r"\ensuremath{\pm}",
         align_columns: bool = False,
+        align_numbers: bool = True,
         strict: bool = False,
     ) -> None:
         self.metrics = load_metrics(metrics)
@@ -153,6 +159,7 @@ class TemplateRenderer:
         self.decimals = decimals
         self.pm_symbol = pm_symbol
         self.align_columns = align_columns
+        self.align_numbers = align_numbers
         self.strict = strict
 
     def _parse_inner_expression(
@@ -303,6 +310,20 @@ class TemplateRenderer:
             parsed = self._parse_inner_expression(inner, prefix_groups)
             if parsed is not None:
                 is_unc, v1, v2, num_v, fmt_spec, item_groups = parsed
+                start, end = m.span()
+                line_start = template_str.rfind("\n", 0, start)
+                line_start = 0 if line_start == -1 else line_start + 1
+                line_end = template_str.find("\n", end)
+                line_end = len(template_str) if line_end == -1 else line_end
+                line = template_str[line_start:line_end]
+
+                if "&" in line:
+                    col_idx = template_str[line_start:start].count("&")
+                else:
+                    col_idx = -1
+
+                table_idx = template_str[:start].count(r"\begin{tabular}")
+
                 items.append(
                     _ItemMatch(
                         match_id=match_id,
@@ -315,6 +336,8 @@ class TemplateRenderer:
                         val2=v2,
                         numeric_val=num_v,
                         format_spec=fmt_spec,
+                        table_idx=table_idx,
+                        col_idx=col_idx,
                     )
                 )
                 match_id += 1
@@ -423,9 +446,10 @@ class TemplateRenderer:
                     if rank_idx in rule.color_ranks:
                         it.assigned_color = rule.color_ranks[rank_idx]
 
-    def _render_item(self, item: _ItemMatch) -> str:
-        """Render a single parsed item into its LaTeX formatted string."""
-        # 1. Determine decimals: search item groups, then default rule, then global decimals
+    def _get_item_config(
+        self, item: _ItemMatch
+    ) -> tuple[int | None, str | bool | None, float | None, str | None]:
+        """Determine decimals, auto_scale, scale, and unit for an item."""
         decimals = self.decimals
         for g in item.groups:
             rule = self.rules.get_rule(g)
@@ -435,6 +459,158 @@ class TemplateRenderer:
         else:
             if self.rules.default_rule.decimals is not None:
                 decimals = self.rules.default_rule.decimals
+
+        auto_scale: str | bool | None = None
+        scale: float | None = None
+        unit: str | None = None
+        for g in item.groups:
+            rule = self.rules.get_rule(g)
+            if auto_scale is None and rule.auto_scale is not None:
+                auto_scale = rule.auto_scale
+            if scale is None and rule.scale is not None:
+                scale = rule.scale
+            if unit is None and rule.unit is not None:
+                unit = rule.unit
+
+        if auto_scale is None and self.rules.default_rule.auto_scale is not None:
+            auto_scale = self.rules.default_rule.auto_scale
+        if scale is None and self.rules.default_rule.scale is not None:
+            scale = self.rules.default_rule.scale
+        if unit is None and self.rules.default_rule.unit is not None:
+            unit = self.rules.default_rule.unit
+
+        return decimals, auto_scale, scale, unit
+
+    def _evaluate_column_alignment(self, items: list[_ItemMatch]) -> None:
+        """Calculate phantom prefixes and suffixes so that values in each column align cleanly."""
+        if not self.align_numbers:
+            return
+
+        if self.rules.default_rule.align_numbers is False:
+            return
+
+        from collections import defaultdict
+
+        col_groups: dict[Any, list[_ItemMatch]] = defaultdict(list)
+        for it in items:
+            if it.numeric_val is None and not it.is_uncertainty:
+                continue
+
+            opt_out = False
+            for g in it.groups:
+                if self.rules.get_rule(g).align_numbers is False:
+                    opt_out = True
+                    break
+            if opt_out:
+                continue
+
+            if it.col_idx >= 0:
+                key = (it.table_idx, it.col_idx)
+            elif it.groups:
+                key = ("group", it.groups[0])
+            else:
+                continue
+
+            col_groups[key].append(it)
+
+        for key, col_items in col_groups.items():
+            if len(col_items) < 2:
+                continue
+
+            item_infos = []
+            for it in col_items:
+                val = it.val1 if it.is_uncertainty else it.numeric_val
+                if val is None or not isinstance(val, (int, float)) or math.isnan(val):
+                    continue
+
+                decimals, auto_scale, scale, unit = self._get_item_config(it)
+                (
+                    num_spec,
+                    _,
+                    spec_auto_scale,
+                    spec_scale,
+                    spec_unit,
+                ) = _parse_format_spec(it.format_spec)
+                eff_auto_scale = (
+                    spec_auto_scale if spec_auto_scale is not None else auto_scale
+                )
+                eff_scale = spec_scale if spec_scale is not None else scale
+
+                if eff_auto_scale:
+                    factor, _ = get_si_prefix_scaling(val, mode=eff_auto_scale)
+                    scaled_val = float(val) / factor
+                elif eff_scale is not None:
+                    scaled_val = float(val) * eff_scale
+                else:
+                    scaled_val = float(val)
+
+                if num_spec:
+                    try:
+                        formatted_str = format(scaled_val, num_spec)
+                    except Exception:
+                        formatted_str = str(scaled_val)
+                elif decimals is not None:
+                    formatted_str = f"{scaled_val:.{decimals}f}"
+                else:
+                    formatted_str = str(scaled_val)
+
+                is_neg = formatted_str.startswith("-")
+                clean_num = formatted_str.lstrip("-")
+                if "." in clean_num:
+                    int_part, dec_part = clean_num.split(".", 1)
+                    has_dot = True
+                else:
+                    int_part, dec_part = clean_num, ""
+                    has_dot = False
+
+                item_infos.append(
+                    {
+                        "item": it,
+                        "is_neg": is_neg,
+                        "int_digits": len(int_part),
+                        "dec_digits": len(dec_part),
+                        "has_dot": has_dot,
+                    }
+                )
+
+            if len(item_infos) < 2:
+                continue
+
+            has_negative = any(info["is_neg"] for info in item_infos)
+            max_int_digits = max(info["int_digits"] for info in item_infos)
+            max_dec_digits = max(info["dec_digits"] for info in item_infos)
+            any_has_dot = any(info["has_dot"] for info in item_infos)
+
+            for info in item_infos:
+                it = info["item"]
+                int_pad = max_int_digits - info["int_digits"]
+                dec_pad = max_dec_digits - info["dec_digits"]
+
+                # Prefix alignment
+                if info["is_neg"]:
+                    if int_pad > 0:
+                        it.align_prefix = r"\hphantom{" + ("0" * int_pad) + "}"
+                    else:
+                        it.align_prefix = ""
+                else:
+                    pad_chars = ("-" if has_negative else "") + ("0" * int_pad)
+                    if pad_chars:
+                        it.align_prefix = r"\hphantom{" + pad_chars + "}"
+                    else:
+                        it.align_prefix = ""
+
+                # Suffix alignment
+                if dec_pad > 0:
+                    dot_pad = (
+                        r"\hphantom{.}" if (any_has_dot and not info["has_dot"]) else ""
+                    )
+                    it.align_suffix = dot_pad + r"\hphantom{" + ("0" * dec_pad) + "}"
+                else:
+                    it.align_suffix = ""
+
+    def _render_item(self, item: _ItemMatch) -> str:
+        """Render a single parsed item into its LaTeX formatted string."""
+        decimals, auto_scale, scale, unit = self._get_item_config(item)
 
         # 2. Determine text color: item assigned rank color first, then group static color, then default
         color: str | None = item.assigned_color
@@ -460,27 +636,7 @@ class TemplateRenderer:
                 if self.rules.default_rule.cell_color:
                     cell_color = self.rules.default_rule.cell_color
 
-        # 4. Determine auto_scale, scale, unit from groups or default rule
-        auto_scale: str | bool | None = None
-        scale: float | None = None
-        unit: str | None = None
-        for g in item.groups:
-            rule = self.rules.get_rule(g)
-            if auto_scale is None and rule.auto_scale is not None:
-                auto_scale = rule.auto_scale
-            if scale is None and rule.scale is not None:
-                scale = rule.scale
-            if unit is None and rule.unit is not None:
-                unit = rule.unit
-
-        if auto_scale is None and self.rules.default_rule.auto_scale is not None:
-            auto_scale = self.rules.default_rule.auto_scale
-        if scale is None and self.rules.default_rule.scale is not None:
-            scale = self.rules.default_rule.scale
-        if unit is None and self.rules.default_rule.unit is not None:
-            unit = self.rules.default_rule.unit
-
-        # 5. Combine styles: static group styles + extremum assigned styles
+        # 4. Combine styles: static group styles + extremum assigned styles
         styles: list[str] = list(item.assigned_styles)
         for g in item.groups:
             rule = self.rules.get_rule(g)
@@ -488,9 +644,9 @@ class TemplateRenderer:
                 if st not in styles:
                     styles.append(st)
 
-        # 6. Format string
+        # 5. Format string
         if item.is_uncertainty:
-            return format_uncertainty(
+            content = format_uncertainty(
                 mean_val=item.val1,
                 std_val=item.val2,
                 decimals=decimals,
@@ -498,30 +654,44 @@ class TemplateRenderer:
                 pm_symbol=self.pm_symbol,
                 extra_styles=styles,
                 color=color,
-                cell_color=cell_color,
+                cell_color=None,
                 auto_scale=auto_scale,
                 scale=scale,
                 unit=unit,
             )
         elif not item.is_plain_text:
-            return format_value(
+            content = format_value(
                 val=item.val1,
                 decimals=decimals,
                 format_spec=item.format_spec,
                 extra_styles=styles,
                 color=color,
-                cell_color=cell_color,
+                cell_color=None,
                 auto_scale=auto_scale,
                 scale=scale,
                 unit=unit,
             )
         else:
-            return apply_latex_styles(
+            content = apply_latex_styles(
                 item.plain_content or "",
                 styles=styles,
                 color=color,
-                cell_color=cell_color,
+                cell_color=None,
             )
+
+        if item.align_prefix:
+            content = f"{item.align_prefix}{content}"
+
+        if item.align_suffix:
+            if unit and content.endswith(unit):
+                content = content[: -len(unit)] + item.align_suffix + unit
+            else:
+                content = f"{content}{item.align_suffix}"
+
+        if cell_color:
+            content = apply_latex_cell_color(content, cell_color)
+
+        return content
 
     def render(self, template_str: str) -> str:
         """Render a template string into a LaTeX table applying metric values and group rules."""
@@ -529,6 +699,9 @@ class TemplateRenderer:
 
         # Calculate extremums (highest/lowest) per group
         self._evaluate_group_extremums(items)
+
+        # Calculate column number alignment (phantom minus & digits)
+        self._evaluate_column_alignment(items)
 
         # Replace items from right to left to preserve offsets
         rendered = template_str
@@ -542,6 +715,7 @@ class TemplateRenderer:
             remaining_items = self._collect_items(rendered)
             if remaining_items:
                 self._evaluate_group_extremums(remaining_items)
+                self._evaluate_column_alignment(remaining_items)
                 for item in sorted(
                     remaining_items, key=lambda it: it.span[0], reverse=True
                 ):

@@ -6,7 +6,7 @@ from latex_table_generator import compile_table, generate_latex_table
 # File paths
 curr_dir = Path(__file__).parent
 csv_path = curr_dir / "metrics.csv"
-template_path = curr_dir / "template.txt"
+template_path = curr_dir / "template.tex"
 rules_path = curr_dir / "rules.yaml"
 output_tex_path = curr_dir / "table_output.tex"
 output_pdf_path = curr_dir / "table_output.pdf"
