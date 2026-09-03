@@ -25,7 +25,15 @@ def create_standalone_document(
     border: str = "10pt",
 ) -> str:
     """Wrap table LaTeX snippet in a standalone document that automatically fits tables of any width."""
-    packages = ["booktabs", "amsmath", "amssymb", "tabularx", "multirow", "varwidth"]
+    packages = [
+        "booktabs",
+        "amsmath",
+        "amssymb",
+        "tabularx",
+        "multirow",
+        "varwidth",
+        "threeparttable",
+    ]
     if extra_packages:
         packages.extend(extra_packages)
 

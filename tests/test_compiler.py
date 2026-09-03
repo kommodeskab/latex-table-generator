@@ -84,3 +84,33 @@ def test_compile_wide_table(tmp_path: Path):
     assert res_png is not None
     assert pdf_out.exists()
     assert png_out.exists()
+
+
+@pytest.mark.skipif(
+    not (is_pdflatex_available() and is_pdftoppm_available()),
+    reason="pdflatex or pdftoppm not available",
+)
+def test_compile_table_with_threeparttable(tmp_path: Path):
+    table_snippet = """\\begin{table}
+\\centering
+\\begin{threeparttable}
+\\caption{A long caption describing the benchmark results that automatically wraps to the exact width of the table rather than stretching out.}
+\\begin{tabular}{cc}
+\\toprule
+Model & Score \\\\
+\\midrule
+M1 & 0.95 \\\\
+\\bottomrule
+\\end{tabular}
+\\end{threeparttable}
+\\end{table}"""
+
+    pdf_out = tmp_path / "tpt_table.pdf"
+    png_out = tmp_path / "tpt_table.png"
+    res_pdf, res_png = compile_table(
+        table_snippet, output_pdf=pdf_out, output_png=png_out, dpi=150
+    )
+    assert res_pdf is not None
+    assert res_png is not None
+    assert pdf_out.exists()
+    assert png_out.exists()
