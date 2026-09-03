@@ -218,10 +218,26 @@ groups:
     auto_scale: "binary"           # Auto-scale mode: true/"decimal"/"si" (base 1000) or "binary"/"iec" (base 1024)
     scale: 100                     # Multiplier applied before formatting (e.g. 100 to display percentages)
     unit: "%"                      # Unit suffix appended to values (e.g. "%", " ms", " dB", "M")
-    color: "blue"                  # Static text color, or rank mapping: {1: "blue", -1: "red"}
-    cell_color: "yellow!25"        # Static cell background, or rank mapping: {1: "green!15", -1: "red!15"}
-    cell_color_1: "green!15"       # Convenience shortcut for rank 1 cell background
-    cell_color_2: "yellow!15"      # Convenience shortcut for rank 2 cell background
+    # Cell background colors: static color or rank dictionary
+    cell_color: "yellow!25"        # Static background for all cells in group
+    # OR rank-based cell background colors:
+    cell_color_ranks:              # (or under `cell_color:`)
+      1: "green!15"                # Rank 1 (best) background color
+      2: "yellow!15"               # Rank 2 (second best) background color
+      -1: "red!15"                 # Rank -1 (worst) background color
+    # OR individual rank keys:
+    # cell_color_1: "green!15"
+    # cell_color_2: "yellow!15"
+
+    # Text colors: static color or rank dictionary
+    color: "blue"                  # Static text color for all cells in group
+    # OR rank-based text colors:
+    color_ranks:                   # (or under `color:`)
+      1: "ForestGreen"             # Rank 1 (best) text color
+      -1: "red"                    # Rank -1 (worst) text color
+    # OR individual rank keys:
+    # color_1: "ForestGreen"
+
     styles: ["italic"]             # Static styles applied to all cells in group (["bold", "italic", "underline"])
     custom_format: "{:.1f}"        # Optional Python format string
     align_numbers: true            # Align minus signs, decimal points, and +- signs (default: true)
@@ -243,9 +259,10 @@ default:                           # Global fallback options applied to all ungr
 | `si_prefix` / `auto_scale` | `bool` or `str` | `None` | Automatically scales large/small numbers with SI prefixes. `true`/`"si"`/`"decimal"` uses base-1000 (`k`, `M`, `G`, `µ`, etc.); `"binary"`/`"iec"` uses base-1024 (`Ki`, `Mi`, `Gi`). |
 | `scale` | `float` | `None` | Multiplier applied to values before formatting (e.g., `100` converts `0.85` to `85.0`). |
 | `unit` | `str` | `None` | Unit suffix appended after the number and any uncertainty (e.g. `dB`, `ms`, `%`). |
-| `color` | `str` or `dict[int, str]` | `None` | Text color. Can be a static color name/hex (e.g. `"blue"`, `"#336699"`) or a rank dictionary (e.g. `{1: "ForestGreen", -1: "red"}`). |
-| `cell_color` | `str` or `dict[int, str]` | `None` | Cell background color using LaTeX `\cellcolor`. Can be a static color name/hex or a rank dictionary (e.g. `{1: "green!15", -1: "red!15"}`). |
-| `cell_color_<N>` | `str` | `None` | Shortcut to assign background color for rank `N` (e.g. `cell_color_1: "green!15"`). |
+| `cell_color` / `cell_color_ranks` | `str` or `dict[int, str]` | `None` | Cell background color using LaTeX `\cellcolor`. Can be a static color name/hex (e.g. `"yellow!25"`, `"#E8F5E9"`) or a rank dictionary mapping rank integers to colors (e.g. `{1: "green!15", -1: "red!15"}`). |
+| `cell_color_<N>` | `str` | `None` | Shortcut to assign background color for rank `N` (e.g. `cell_color_1: "green!15"`, `cell_color_2: "yellow!15"`). |
+| `color` / `color_ranks` | `str` or `dict[int, str]` | `None` | Text color. Can be a static color name/hex (e.g. `"blue"`, `"#336699"`) or a rank dictionary mapping rank integers to colors (e.g. `{1: "ForestGreen", -1: "red"}`). |
+| `color_<N>` | `str` | `None` | Shortcut to assign text color for rank `N` (e.g. `color_1: "ForestGreen"`). |
 | `styles` | `list[str]` or `str` | `[]` | Static styles applied unconditionally to all cells in the group (e.g., `["italic"]`). |
 | `custom_format` | `str` | `None` | Custom Python format string (e.g., `"{:.2f}%"`). |
 | `align_numbers` | `bool` | `true` | Automatically aligns decimal points, minus signs, and plus-minus (`\pm`) signs in columns without shifting. Set `false` to opt out. |

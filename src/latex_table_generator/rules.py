@@ -79,7 +79,7 @@ class GroupRule:
 
         # 3. Parse text colors (static string or rank dict, supports negative ranks like -1)
         color_ranks: dict[int, str] = {}
-        raw_color = data.get("color")
+        raw_color = data.get("color") or data.get("color_ranks")
         static_color: str | None = None
         if isinstance(raw_color, dict):
             for k, v in raw_color.items():
@@ -94,7 +94,7 @@ class GroupRule:
 
         for k, v in data.items():
             k_lower = k.lower()
-            if k_lower.startswith("color_"):
+            if k_lower.startswith("color_") and k_lower != "color_ranks":
                 suffix = k_lower[6:].strip()
                 try:
                     color_ranks[int(suffix)] = str(v).strip()
@@ -105,6 +105,7 @@ class GroupRule:
         cell_color_ranks: dict[int, str] = {}
         raw_cell_color = (
             data.get("cell_color")
+            or data.get("cell_color_ranks")
             or data.get("bg_color")
             or data.get("background_color")
         )
@@ -123,8 +124,8 @@ class GroupRule:
         for k, v in data.items():
             k_lower = k.lower()
             if (
-                k_lower.startswith("cell_color_")
-                or k_lower.startswith("bg_color_")
+                (k_lower.startswith("cell_color_") and k_lower != "cell_color_ranks")
+                or (k_lower.startswith("bg_color_") and k_lower != "bg_color_ranks")
                 or k_lower.startswith("bg_")
             ):
                 suffix = k_lower.rsplit("_", 1)[1].strip()
