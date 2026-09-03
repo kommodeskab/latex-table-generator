@@ -665,21 +665,42 @@ class TemplateRenderer:
             and has_font_style
             and (item.is_uncertainty or not item.is_plain_text)
         ):
-            # Format unstyled base text to determine natural zero-width alignment boundaries
+            non_font_styles = [s for s in styles if s not in font_styles]
+
             if item.is_uncertainty:
-                raw_text = format_uncertainty(
-                    mean_val=item.val1,
-                    std_val=item.val2,
+                mean_text = format_value(
+                    val=item.val1,
                     decimals=decimals,
                     format_spec=item.format_spec,
-                    pm_symbol=self.pm_symbol,
                     extra_styles=None,
                     color=None,
                     cell_color=None,
                     auto_scale=auto_scale,
                     scale=scale,
-                    unit=unit,
+                    unit=None,
                 )
+                std_text = format_value(
+                    val=item.val2,
+                    decimals=decimals,
+                    format_spec=item.format_spec,
+                    extra_styles=None,
+                    color=None,
+                    cell_color=None,
+                    auto_scale=auto_scale,
+                    scale=scale,
+                    unit=None,
+                )
+                styled_mean = apply_latex_styles(mean_text, styles=font_styles)
+                styled_pm = apply_latex_styles(self.pm_symbol, styles=font_styles)
+                styled_std = apply_latex_styles(std_text, styles=font_styles)
+
+                content = (
+                    f"\\phantom{{{mean_text}}}\\llap{{{styled_mean}}} "
+                    f"\\rlap{{{styled_pm}}}\\phantom{{{self.pm_symbol}}} "
+                    f"\\rlap{{{styled_std}}}\\phantom{{{std_text}}}"
+                )
+                if unit:
+                    content = f"{content}{unit}"
             else:
                 raw_text = format_value(
                     val=item.val1,
@@ -693,21 +714,19 @@ class TemplateRenderer:
                     unit=unit,
                 )
 
-            non_font_styles = [s for s in styles if s not in font_styles]
-
-            if "." in raw_text:
-                dot_idx = raw_text.find(".")
-                left = raw_text[:dot_idx]
-                right = raw_text[dot_idx:]
-                styled_left = apply_latex_styles(left, styles=font_styles)
-                styled_right = apply_latex_styles(right, styles=font_styles)
-                content = (
-                    f"\\phantom{{{left}}}\\llap{{{styled_left}}}"
-                    f"\\rlap{{{styled_right}}}\\phantom{{{right}}}"
-                )
-            else:
-                styled_left = apply_latex_styles(raw_text, styles=font_styles)
-                content = f"\\phantom{{{raw_text}}}\\llap{{{styled_left}}}"
+                if "." in raw_text:
+                    dot_idx = raw_text.find(".")
+                    left = raw_text[:dot_idx]
+                    right = raw_text[dot_idx:]
+                    styled_left = apply_latex_styles(left, styles=font_styles)
+                    styled_right = apply_latex_styles(right, styles=font_styles)
+                    content = (
+                        f"\\phantom{{{left}}}\\llap{{{styled_left}}}"
+                        f"\\rlap{{{styled_right}}}\\phantom{{{right}}}"
+                    )
+                else:
+                    styled_left = apply_latex_styles(raw_text, styles=font_styles)
+                    content = f"\\phantom{{{raw_text}}}\\llap{{{styled_left}}}"
 
             if non_font_styles:
                 content = apply_latex_styles(content, styles=non_font_styles)

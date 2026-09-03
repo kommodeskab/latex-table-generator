@@ -114,7 +114,7 @@ def test_highlight_highest_lowest_ignoring_uncertainty(sample_metrics):
         in result
     )
     assert (
-        r"Model B & \phantom{0}\llap{\textbf{0}}\rlap{\textbf{.89 \ensuremath{\pm} 0.01}}\phantom{.89 \ensuremath{\pm} 0.01} & 24.8 \\"
+        r"Model B & \phantom{0.89}\llap{\textbf{0.89}} \rlap{\textbf{\ensuremath{\pm}}}\phantom{\ensuremath{\pm}} \rlap{\textbf{0.01}}\phantom{0.01} & 24.8 \\"
         in result
     )
     assert r"Model C & 0.81 \ensuremath{\pm} 0.01 & 45.2 \\" in result
@@ -198,7 +198,7 @@ def test_pipe_group_syntax(sample_metrics):
 
     assert r"Model A & 0.75 \ensuremath{\pm} 0.01 \\" in result
     assert (
-        r"Model B & \phantom{0}\llap{\textbf{0}}\rlap{\textbf{.89 \ensuremath{\pm} 0.01}}\phantom{.89 \ensuremath{\pm} 0.01} \\"
+        r"Model B & \phantom{0.89}\llap{\textbf{0.89}} \rlap{\textbf{\ensuremath{\pm}}}\phantom{\ensuremath{\pm}} \rlap{\textbf{0.01}}\phantom{0.01} \\"
         in result
     )
 
@@ -254,7 +254,7 @@ groups:
         in result
     )
     assert (
-        r"M2 & \phantom{0}\llap{\textbf{0}}\rlap{\textbf{.90 \ensuremath{\pm} 0.02}}\phantom{.90 \ensuremath{\pm} 0.02} & \textcolor{darkgray}{30.0} \\"
+        r"M2 & \phantom{0.90}\llap{\textbf{0.90}} \rlap{\textbf{\ensuremath{\pm}}}\phantom{\ensuremath{\pm}} \rlap{\textbf{0.02}}\phantom{0.02} & \textcolor{darkgray}{30.0} \\"
         in result
     )
     assert out_file.exists()
@@ -275,7 +275,7 @@ def test_cell_background_color(sample_metrics):
     result = renderer.render(template)
 
     assert (
-        r"Model A & \cellcolor{yellow!25} 0.75 & \cellcolor[HTML]{E8F5E9} 12.40 \\"
+        r"Model A & \cellcolor{yellow!25}0.75 & \cellcolor[HTML]{E8F5E9}12.40 \\"
         in result
     )
 
@@ -308,8 +308,8 @@ def test_cell_color_ranks(sample_metrics):
     # Model B is highest (0.8856) -> Rank 1 -> green!20
     # Model A is lowest (0.7512) -> Rank 3 -> red!15
     # Model C is middle (0.8123) -> Rank 2 -> no cellcolor
-    assert r"Model A & \cellcolor{red!15} 0.75 \ensuremath{\pm} 0.01 \\" in result
-    assert r"Model B & \cellcolor{green!20} 0.89 \ensuremath{\pm} 0.01 \\" in result
+    assert r"Model A & \cellcolor{red!15}0.75 \ensuremath{\pm} 0.01 \\" in result
+    assert r"Model B & \cellcolor{green!20}0.89 \ensuremath{\pm} 0.01 \\" in result
     assert r"Model C & 0.81 \ensuremath{\pm} 0.01 \\" in result
 
 
@@ -383,10 +383,10 @@ def test_rank_based_multiple_ranks_and_colors(sample_metrics):
     # Model C is Rank 2 -> underline & cell_color yellow!15
     assert r"Model A & 0.75 \\" in result
     assert (
-        r"Model B & \cellcolor{green!20} \phantom{0}\llap{\textbf{0}}\rlap{\textbf{.89}}\phantom{.89} \\"
+        r"Model B & \cellcolor{green!20}\phantom{0}\llap{\textbf{0}}\rlap{\textbf{.89}}\phantom{.89} \\"
         in result
     )
-    assert r"Model C & \cellcolor{yellow!15} \underline{0.81} \\" in result
+    assert r"Model C & \cellcolor{yellow!15}\underline{0.81} \\" in result
 
 
 def test_rounded_value_ranking_ties():
@@ -646,10 +646,73 @@ def test_style_width_alignment_bold_italic_underline():
     assert r"M1 & \hphantom{-0}\underline{9.84 \ensuremath{\pm} 1.23} \\" in result
     # M2 -> normal negative with phantom zero
     assert r"M2 & \hphantom{0}-4.43 \ensuremath{\pm} 2.31 \\" in result
-    # M3 (Rank 1) -> bold with zero-width overlay around dot and unstyled phantom widths
+    # M3 (Rank 1) -> bold with zero-width overlay around pm and unstyled phantom widths
     assert (
-        r"M3 & \hphantom{-}\phantom{10}\llap{\textbf{10}}\rlap{\textbf{.24 \ensuremath{\pm} 0.76}}\phantom{.24 \ensuremath{\pm} 0.76} \\"
+        r"M3 & \hphantom{-}\phantom{10.24}\llap{\textbf{10.24}} \rlap{\textbf{\ensuremath{\pm}}}\phantom{\ensuremath{\pm}} \rlap{\textbf{0.76}}\phantom{0.76} \\"
         in result
     )
     # M4 -> normal negative
     assert r"M4 & -18.23 \ensuremath{\pm} 3.46 \\" in result
+
+
+def test_plus_minus_column_alignment_compiled(tmp_path: Path):
+    """Verify that compiled PDF output aligns all plus-minus signs to the exact same horizontal coordinate."""
+    import subprocess
+    from latex_table_generator import compile_table
+
+    metrics = MetricsStore(
+        {
+            "M1": {"acc_mean": 0.76, "acc_std": 0.01},
+            "M2": {"acc_mean": 0.81, "acc_std": 0.01},
+            "M3": {"acc_mean": 0.87, "acc_std": 0.01},
+            "M4": {"acc_mean": 0.88, "acc_std": 0.01},
+        }
+    )
+    rules = RulesConfig.from_dict(
+        {
+            "groups": {
+                "acc": {
+                    "higher_is_better": True,
+                    "bold": 1,
+                    "underline": 2,
+                    "italic": 3,
+                    "cell_color": {1: "green!20"},
+                    "decimals": 2,
+                }
+            }
+        }
+    )
+    template = (
+        "\\begin{tabular}{c}\n"
+        "\\toprule\n"
+        "Accuracy \\\\\n"
+        "\\midrule\n"
+        "[acc]{M1.acc_mean +- M1.acc_std} \\\\\n"
+        "[acc]{M2.acc_mean +- M2.acc_std} \\\\\n"
+        "[acc]{M3.acc_mean +- M3.acc_std} \\\\\n"
+        "[acc]{M4.acc_mean +- M4.acc_std} \\\\\n"
+        "\\bottomrule\n"
+        "\\end{tabular}\n"
+    )
+
+    rendered = TemplateRenderer(metrics, rules=rules).render(template)
+    pdf_path = tmp_path / "table.pdf"
+    compile_table(rendered, output_pdf=pdf_path)
+
+    res = subprocess.run(
+        ["pdftotext", "-bbox-layout", str(pdf_path), "-"],
+        stdout=subprocess.PIPE,
+        text=True,
+    )
+    pm_coords = []
+    for line in res.stdout.splitlines():
+        if "±" in line:
+            import re
+
+            match = re.search(r'xMin="([0-9.]+)"', line)
+            if match:
+                pm_coords.append(float(match.group(1)))
+
+    assert len(pm_coords) == 4
+    # All pm coordinates must match within floating-point rounding (< 0.05 pt)
+    assert max(pm_coords) - min(pm_coords) < 0.05

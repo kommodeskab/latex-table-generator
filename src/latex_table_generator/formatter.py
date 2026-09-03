@@ -166,15 +166,15 @@ def apply_latex_cell_color(text: str, cell_color: str | None) -> str:
 
     if cc_clean.startswith("#"):
         hex_code = cc_clean[1:].strip()
-        return f"\\cellcolor[HTML]{{{hex_code}}} {text}"
+        return f"\\cellcolor[HTML]{{{hex_code}}}{text}"
     elif cc_clean.lower().startswith("html:"):
         hex_code = cc_clean[5:].strip()
-        return f"\\cellcolor[HTML]{{{hex_code}}} {text}"
+        return f"\\cellcolor[HTML]{{{hex_code}}}{text}"
     elif cc_clean.lower().startswith("rgb:"):
         rgb_code = cc_clean[4:].strip()
-        return f"\\cellcolor[RGB]{{{rgb_code}}} {text}"
+        return f"\\cellcolor[RGB]{{{rgb_code}}}{text}"
     else:
-        return f"\\cellcolor{{{cc_clean}}} {text}"
+        return f"\\cellcolor{{{cc_clean}}}{text}"
 
 
 def apply_latex_styles(
