@@ -500,6 +500,14 @@ class TemplateRenderer:
 
         return decimals, auto_scale, scale, unit
 
+    def _get_item_sem(self, item: _ItemMatch) -> int | None:
+        """Determine standard_error_of_mean sample size for an item if configured."""
+        for g in item.groups:
+            rule = self.rules.get_rule(g)
+            if rule.standard_error_of_mean is not None:
+                return rule.standard_error_of_mean
+        return self.rules.default_rule.standard_error_of_mean
+
     def _evaluate_column_alignment(self, items: list[_ItemMatch]) -> None:
         """Calculate phantom prefixes and suffixes so that values in each column align cleanly."""
         if not self.align_numbers:
@@ -678,6 +686,15 @@ class TemplateRenderer:
         has_font_style = bool(font_styles)
 
         # 5. Format string
+        eff_val2 = item.val2
+        if item.is_uncertainty and eff_val2 is not None:
+            sem_samples = self._get_item_sem(item)
+            if sem_samples is not None:
+                try:
+                    eff_val2 = float(eff_val2) / math.sqrt(sem_samples)
+                except (ValueError, TypeError):
+                    pass
+
         if (
             not opt_out_align
             and has_font_style
@@ -698,7 +715,7 @@ class TemplateRenderer:
                     unit=None,
                 )
                 std_text = format_value(
-                    val=item.val2,
+                    val=eff_val2,
                     decimals=decimals,
                     format_spec=item.format_spec,
                     extra_styles=None,
@@ -753,7 +770,7 @@ class TemplateRenderer:
         elif item.is_uncertainty:
             content = format_uncertainty(
                 mean_val=item.val1,
-                std_val=item.val2,
+                std_val=eff_val2,
                 decimals=decimals,
                 format_spec=item.format_spec,
                 pm_symbol=self.pm_symbol,

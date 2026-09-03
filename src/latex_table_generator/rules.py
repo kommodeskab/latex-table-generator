@@ -28,6 +28,7 @@ class GroupRule:
     styles: list[str] = field(default_factory=list)
     custom_format: str | None = None
     align_numbers: bool | None = None
+    standard_error_of_mean: int | None = None
 
     @classmethod
     def from_dict(cls, name: str, data: Mapping[str, Any] | None) -> GroupRule:
@@ -175,6 +176,27 @@ class GroupRule:
         if align_numbers is not None:
             align_numbers = bool(align_numbers)
 
+        sem_raw = None
+        for key in ("standard_error_of_mean", "sem", "standard_error"):
+            if key in data and data[key] is not None:
+                sem_raw = data[key]
+                break
+        standard_error_of_mean: int | None = None
+        if sem_raw is not None and str(sem_raw).strip() != "":
+            try:
+                sem_int = int(str(sem_raw).strip())
+                if sem_int <= 0:
+                    raise ValueError(
+                        f"standard_error_of_mean must be a positive integer, got {sem_int}"
+                    )
+                standard_error_of_mean = sem_int
+            except ValueError as e:
+                if "positive integer" in str(e):
+                    raise
+                raise ValueError(
+                    f"Invalid standard_error_of_mean value: {sem_raw}. Must be a positive integer."
+                ) from e
+
         return cls(
             name=name,
             higher_is_better=higher_is_better,
@@ -192,6 +214,7 @@ class GroupRule:
             styles=styles,
             custom_format=custom_format,
             align_numbers=align_numbers,
+            standard_error_of_mean=standard_error_of_mean,
         )
 
 

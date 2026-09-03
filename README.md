@@ -241,6 +241,7 @@ groups:
     styles: ["italic"]             # Static styles applied to all cells in group (["bold", "italic", "underline"])
     custom_format: "{:.1f}"        # Optional Python format string
     align_numbers: true            # Align minus signs, decimal points, and +- signs (default: true)
+    standard_error_of_mean: 10     # Positive int (sample size N): normalizes std to SEM = std / sqrt(N)
 
 default:                           # Global fallback options applied to all ungrouped/grouped cells
   decimals: 2
@@ -259,6 +260,7 @@ default:                           # Global fallback options applied to all ungr
 | `si_prefix` / `auto_scale` | `bool` or `str` | `None` | Automatically scales large/small numbers with SI prefixes. `true`/`"si"`/`"decimal"` uses base-1000 (`k`, `M`, `G`, `µ`, etc.); `"binary"`/`"iec"` uses base-1024 (`Ki`, `Mi`, `Gi`). |
 | `scale` | `float` | `None` | Multiplier applied to values before formatting (e.g., `100` converts `0.85` to `85.0`). |
 | `unit` | `str` | `None` | Unit suffix appended after the number and any uncertainty (e.g. `dB`, `ms`, `%`). |
+| `standard_error_of_mean` | `int` | `None` | Number of samples $N > 0$ used to compute the standard deviation. Normalizes uncertainty to standard error of the mean ($\text{SEM} = s / \sqrt{N}$). Can be empty/omitted for raw standard deviation. |
 | `cell_color` / `cell_color_ranks` | `str` or `dict[int, str]` | `None` | Cell background color using LaTeX `\cellcolor`. Can be a static color name/hex (e.g. `"yellow!25"`, `"#E8F5E9"`) or a rank dictionary mapping rank integers to colors (e.g. `{1: "green!15", -1: "red!15"}`). |
 | `cell_color_<N>` | `str` | `None` | Shortcut to assign background color for rank `N` (e.g. `cell_color_1: "green!15"`, `cell_color_2: "yellow!15"`). |
 | `color` / `color_ranks` | `str` or `dict[int, str]` | `None` | Text color. Can be a static color name/hex (e.g. `"blue"`, `"#336699"`) or a rank dictionary mapping rank integers to colors (e.g. `{1: "ForestGreen", -1: "red"}`). |

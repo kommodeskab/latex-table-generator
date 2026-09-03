@@ -4,7 +4,7 @@ from pathlib import Path
 import pytest
 from latex_table_generator.generator import generate_latex_table
 from latex_table_generator.metrics import MetricsStore
-from latex_table_generator.rules import RulesConfig
+from latex_table_generator.rules import GroupRule, RulesConfig
 from latex_table_generator.template import TemplateRenderer
 
 
@@ -817,3 +817,117 @@ def test_negative_ranks_ties():
         r"M3 & \phantom{0}\llap{\textbf{0}}\rlap{\textbf{.80}}\phantom{.80} \\"
         in result
     )
+
+
+def test_standard_error_of_mean_basic():
+    """Verify that standard_error_of_mean normalizes std by dividing by sqrt(N)."""
+    metrics = MetricsStore(
+        {
+            "M1": {"acc_mean": 0.80, "acc_std": 0.04},
+            "M2": {"acc_mean": 0.90, "acc_std": 0.08},
+        }
+    )
+
+    # N = 4 -> sqrt(4) = 2 -> std should be halved (0.04 -> 0.02, 0.08 -> 0.04)
+    rules = RulesConfig.from_dict(
+        {
+            "groups": {
+                "acc": {
+                    "standard_error_of_mean": 4,
+                    "decimals": 2,
+                }
+            }
+        }
+    )
+
+    template = (
+        "M1 & [acc]{M1.acc_mean +- M1.acc_std} \\\\\n"
+        "M2 & [acc]{M2.acc_mean +- M2.acc_std} \\\\"
+    )
+
+    result = TemplateRenderer(metrics, rules=rules).render(template)
+    assert r"M1 & 0.80 \ensuremath{\pm} 0.02 \\" in result
+    assert r"M2 & 0.90 \ensuremath{\pm} 0.04 \\" in result
+
+
+def test_standard_error_of_mean_with_styling_and_alignment():
+    """Verify that standard_error_of_mean works seamlessly with bold/italic styling and zero-width alignment."""
+    metrics = MetricsStore(
+        {
+            "M1": {"loss_mean": 10.0, "loss_std": 2.0},
+            "M2": {"loss_mean": 20.0, "loss_std": 4.0},
+        }
+    )
+
+    # N = 100 -> sqrt(100) = 10 -> std should be divided by 10 (2.0 -> 0.2, 4.0 -> 0.4)
+    # lower_is_better=True: M1 (10.0) is rank 1 -> bold
+    rules = RulesConfig.from_dict(
+        {
+            "groups": {
+                "loss": {
+                    "higher_is_better": False,
+                    "bold": 1,
+                    "standard_error_of_mean": 100,
+                    "decimals": 1,
+                }
+            }
+        }
+    )
+
+    template = (
+        "\\begin{tabular}{c}\n"
+        "M1 & [loss]{M1.loss_mean +- M1.loss_std} \\\\\n"
+        "M2 & [loss]{M2.loss_mean +- M2.loss_std} \\\\\n"
+        "\\end{tabular}"
+    )
+
+    result = TemplateRenderer(metrics, rules=rules).render(template)
+    assert (
+        r"M1 & \phantom{10.0}\llap{\textbf{10.0}} \rlap{\textbf{\ensuremath{\pm}}}\phantom{\ensuremath{\pm}} \rlap{\textbf{0.2}}\phantom{0.2} \\"
+        in result
+    )
+    assert r"M2 & 20.0 \ensuremath{\pm} 0.4 \\" in result
+
+
+def test_standard_error_of_mean_default_rule_and_empty():
+    """Verify fallback to default rule and handling of empty/None standard_error_of_mean."""
+    metrics = MetricsStore(
+        {
+            "M1": {"acc_mean": 0.80, "acc_std": 0.09},
+        }
+    )
+
+    # default has N=9 -> std becomes 0.09 / 3 = 0.03
+    rules_default = RulesConfig.from_dict(
+        {
+            "default": {"standard_error_of_mean": 9, "decimals": 2},
+        }
+    )
+    template = "M1 & {M1.acc_mean +- M1.acc_std} \\\\"
+    res_def = TemplateRenderer(metrics, rules=rules_default).render(template)
+    assert r"M1 & 0.80 \ensuremath{\pm} 0.03 \\" in res_def
+
+    # explicit None/empty: no normalization
+    rules_none = RulesConfig.from_dict(
+        {
+            "groups": {"acc": {"standard_error_of_mean": None, "decimals": 2}},
+        }
+    )
+    res_none = TemplateRenderer(metrics, rules=rules_none).render(
+        "M1 & [acc]{M1.acc_mean +- M1.acc_std} \\\\"
+    )
+    assert r"M1 & 0.80 \ensuremath{\pm} 0.09 \\" in res_none
+
+
+def test_standard_error_of_mean_invalid_values():
+    """Verify that 0, negative values, or non-integers raise ValueError."""
+    import pytest
+
+    with pytest.raises(ValueError, match="positive integer"):
+        GroupRule.from_dict("test", {"standard_error_of_mean": 0})
+
+    with pytest.raises(ValueError, match="positive integer"):
+        GroupRule.from_dict("test", {"standard_error_of_mean": -5})
+
+    with pytest.raises(ValueError, match="positive integer"):
+        GroupRule.from_dict("test", {"standard_error_of_mean": "abc"})
