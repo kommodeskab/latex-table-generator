@@ -41,7 +41,7 @@ class GroupRule:
         else:
             higher_is_better = bool(higher_is_better_raw)
 
-        # 2. Parse rank lists (supports integer like `bold: 1`, list like `bold: [1, 2]`, boolean `bold: true`)
+        # 2. Parse rank lists (supports integer like `bold: 1`, `bold: -1`, list like `bold: [1, -1]`, boolean `bold: true`)
         def _parse_rank_list(val: Any) -> list[int]:
             if val is None:
                 return []
@@ -53,16 +53,21 @@ class GroupRule:
                 res: list[int] = []
                 for p in val.replace(",", "|").split("|"):
                     p_str = p.strip()
-                    if p_str.isdigit():
+                    try:
                         res.append(int(p_str))
+                    except ValueError:
+                        pass
                 return res
             if isinstance(val, (list, tuple)):
                 res = []
                 for item in val:
                     if isinstance(item, int):
                         res.append(item)
-                    elif isinstance(item, str) and item.strip().isdigit():
-                        res.append(int(item.strip()))
+                    elif isinstance(item, str):
+                        try:
+                            res.append(int(item.strip()))
+                        except ValueError:
+                            pass
                     elif isinstance(item, bool) and item:
                         res.append(1)
                 return res
@@ -72,23 +77,31 @@ class GroupRule:
         underline_ranks = _parse_rank_list(data.get("underline"))
         italic_ranks = _parse_rank_list(data.get("italic"))
 
-        # 3. Parse text colors (static string or rank dict)
+        # 3. Parse text colors (static string or rank dict, supports negative ranks like -1)
         color_ranks: dict[int, str] = {}
         raw_color = data.get("color")
         static_color: str | None = None
         if isinstance(raw_color, dict):
             for k, v in raw_color.items():
-                if str(k).isdigit() and v:
-                    color_ranks[int(k)] = str(v).strip()
+                try:
+                    k_int = int(str(k).strip())
+                    if v:
+                        color_ranks[k_int] = str(v).strip()
+                except (ValueError, TypeError):
+                    pass
         elif raw_color is not None:
             static_color = str(raw_color).strip()
 
         for k, v in data.items():
             k_lower = k.lower()
-            if k_lower.startswith("color_") and k_lower[6:].isdigit() and v:
-                color_ranks[int(k_lower[6:])] = str(v).strip()
+            if k_lower.startswith("color_"):
+                suffix = k_lower[6:].strip()
+                try:
+                    color_ranks[int(suffix)] = str(v).strip()
+                except (ValueError, TypeError):
+                    pass
 
-        # 4. Parse cell background colors (static string or rank dict)
+        # 4. Parse cell background colors (static string or rank dict, supports negative ranks like -1)
         cell_color_ranks: dict[int, str] = {}
         raw_cell_color = (
             data.get("cell_color")
@@ -98,8 +111,12 @@ class GroupRule:
         static_cell_color: str | None = None
         if isinstance(raw_cell_color, dict):
             for k, v in raw_cell_color.items():
-                if str(k).isdigit() and v:
-                    cell_color_ranks[int(k)] = str(v).strip()
+                try:
+                    k_int = int(str(k).strip())
+                    if v:
+                        cell_color_ranks[k_int] = str(v).strip()
+                except (ValueError, TypeError):
+                    pass
         elif raw_cell_color is not None:
             static_cell_color = str(raw_cell_color).strip()
 
@@ -110,9 +127,11 @@ class GroupRule:
                 or k_lower.startswith("bg_color_")
                 or k_lower.startswith("bg_")
             ):
-                suffix = k_lower.rsplit("_", 1)[1]
-                if suffix.isdigit() and v:
+                suffix = k_lower.rsplit("_", 1)[1].strip()
+                try:
                     cell_color_ranks[int(suffix)] = str(v).strip()
+                except (ValueError, TypeError):
+                    pass
 
         decimals = data.get("decimals")
         if decimals is not None:

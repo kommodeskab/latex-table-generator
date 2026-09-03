@@ -413,7 +413,10 @@ class TemplateRenderer:
                 reverse=rule.higher_is_better,
             )
 
+            n_ranks = len(unique_vals)
             for rank_idx, rank_val in enumerate(unique_vals, start=1):
+                neg_rank_idx = rank_idx - n_ranks - 1
+
                 # Apply style to all items that tie/score the same rounded value
                 matching_items = [
                     it
@@ -423,29 +426,44 @@ class TemplateRenderer:
                     )
                 ]
 
+                should_bold = rank_idx in rule.bold or neg_rank_idx in rule.bold
+                should_underline = (
+                    rank_idx in rule.underline or neg_rank_idx in rule.underline
+                )
+                should_italic = rank_idx in rule.italic or neg_rank_idx in rule.italic
+
+                assigned_cell_color = None
+                if rank_idx in rule.cell_color_ranks:
+                    assigned_cell_color = rule.cell_color_ranks[rank_idx]
+                elif neg_rank_idx in rule.cell_color_ranks:
+                    assigned_cell_color = rule.cell_color_ranks[neg_rank_idx]
+
+                assigned_color = None
+                if rank_idx in rule.color_ranks:
+                    assigned_color = rule.color_ranks[rank_idx]
+                elif neg_rank_idx in rule.color_ranks:
+                    assigned_color = rule.color_ranks[neg_rank_idx]
+
                 for it in matching_items:
                     # 1. Bold rank
-                    if rank_idx in rule.bold:
-                        if "bold" not in it.assigned_styles:
-                            it.assigned_styles.append("bold")
+                    if should_bold and "bold" not in it.assigned_styles:
+                        it.assigned_styles.append("bold")
 
                     # 2. Underline rank
-                    if rank_idx in rule.underline:
-                        if "underline" not in it.assigned_styles:
-                            it.assigned_styles.append("underline")
+                    if should_underline and "underline" not in it.assigned_styles:
+                        it.assigned_styles.append("underline")
 
                     # 3. Italic rank
-                    if rank_idx in rule.italic:
-                        if "italic" not in it.assigned_styles:
-                            it.assigned_styles.append("italic")
+                    if should_italic and "italic" not in it.assigned_styles:
+                        it.assigned_styles.append("italic")
 
                     # 4. Cell background color for rank
-                    if rank_idx in rule.cell_color_ranks:
-                        it.assigned_cell_color = rule.cell_color_ranks[rank_idx]
+                    if assigned_cell_color:
+                        it.assigned_cell_color = assigned_cell_color
 
                     # 5. Text color for rank
-                    if rank_idx in rule.color_ranks:
-                        it.assigned_color = rule.color_ranks[rank_idx]
+                    if assigned_color:
+                        it.assigned_color = assigned_color
 
     def _get_item_config(
         self, item: _ItemMatch

@@ -716,3 +716,104 @@ def test_plus_minus_column_alignment_compiled(tmp_path: Path):
     assert len(pm_coords) == 4
     # All pm coordinates must match within floating-point rounding (< 0.05 pt)
     assert max(pm_coords) - min(pm_coords) < 0.05
+
+
+def test_negative_ranks_worst_and_second_worst():
+    """Verify that negative rank integers target the worst (-1), 2nd worst (-2), etc."""
+    metrics = MetricsStore(
+        {
+            "M1": {"acc": 0.95, "lat": 10.0},
+            "M2": {"acc": 0.90, "lat": 20.0},
+            "M3": {"acc": 0.85, "lat": 30.0},
+            "M4": {"acc": 0.80, "lat": 40.0},
+        }
+    )
+
+    rules = RulesConfig.from_dict(
+        {
+            "groups": {
+                "acc": {
+                    "higher_is_better": True,
+                    "bold": 1,
+                    "italic": -2,
+                    "underline": -1,
+                    "decimals": 2,
+                },
+                "lat": {
+                    "higher_is_better": False,
+                    "bold": -1,  # Worst latency is highest (40.0)
+                    "cell_color": {-1: "red!20", 1: "green!20"},
+                    "decimals": 1,
+                },
+            }
+        }
+    )
+
+    template = (
+        "M1 & [acc]{M1.acc} & [lat]{M1.lat} \\\\\n"
+        "M2 & [acc]{M2.acc} & [lat]{M2.lat} \\\\\n"
+        "M3 & [acc]{M3.acc} & [lat]{M3.lat} \\\\\n"
+        "M4 & [acc]{M4.acc} & [lat]{M4.lat} \\\\"
+    )
+
+    result = TemplateRenderer(metrics, rules=rules).render(template)
+
+    # Accuracy:
+    # M1 (0.95, best) -> bold (rank 1)
+    # M2 (0.90) -> normal
+    # M3 (0.85, 2nd worst) -> italic (rank -2)
+    # M4 (0.80, worst) -> underline (rank -1)
+    # Latency (lower is better):
+    # M1 (10.0, best) -> green!20 (rank 1)
+    # M4 (40.0, worst) -> red!20 and bold (rank -1)
+    assert (
+        r"M1 & \phantom{0}\llap{\textbf{0}}\rlap{\textbf{.95}}\phantom{.95} & \cellcolor{green!20}10.0 \\"
+        in result
+    )
+    assert r"M2 & 0.90 & 20.0 \\" in result
+    assert (
+        r"M3 & \phantom{0}\llap{\textit{0}}\rlap{\textit{.85}}\phantom{.85} & 30.0 \\"
+        in result
+    )
+    assert (
+        r"M4 & \underline{0.80} & \cellcolor{red!20}\phantom{40}\llap{\textbf{40}}\rlap{\textbf{.0}}\phantom{.0} \\"
+        in result
+    )
+
+
+def test_negative_ranks_ties():
+    """Verify that ties among worst values are all styled."""
+    metrics = MetricsStore(
+        {
+            "M1": {"acc": 0.90},
+            "M2": {"acc": 0.80},
+            "M3": {"acc": 0.80},
+        }
+    )
+
+    rules = RulesConfig.from_dict(
+        {
+            "groups": {
+                "acc": {
+                    "higher_is_better": True,
+                    "bold": -1,  # Both M2 and M3 are worst (0.80)
+                    "decimals": 2,
+                }
+            }
+        }
+    )
+
+    template = (
+        "M1 & [acc]{M1.acc} \\\\\nM2 & [acc]{M2.acc} \\\\\nM3 & [acc]{M3.acc} \\\\"
+    )
+
+    result = TemplateRenderer(metrics, rules=rules).render(template)
+    assert r"M1 & 0.90 \\" in result
+    assert (
+        r"M2 & \phantom{0}\llap{\textbf{0}}\rlap{\textbf{.80}}\phantom{.80} \\"
+        in result
+    )
+    assert (
+        r"M3 & \phantom{0}\llap{\textbf{0}}\rlap{\textbf{.80}}\phantom{.80} \\"
+        in result
+    )
