@@ -3,64 +3,35 @@ groups:
   # ==========================================================
   # Supervised Models Groups
   # ==========================================================
-  s_params:
+  params:
     higher_is_better: false
     bold: 1
     si_prefix: true
     decimals: 1
 
-  s_acc:
-    higher_is_better: true
-    bold: 1
-    underline: 2
-    italic: 3
-    decimals: 2
-    color: "blue"
-    cell_color:
-      1: "green!15"
-
-  s_top5:
+  high_metric:
     higher_is_better: true
     bold: 1
     underline: 2
     decimals: 2
-    color: "teal"
-    cell_color:
-      1: "green!15"
 
-  s_f1:
-    higher_is_better: true
-    bold: 1
-    underline: 2
-    decimals: 2
-    color: "NavyBlue"
-    cell_color:
-      1: "green!15"
-
-  s_latency:
+  low_metric:
     higher_is_better: false
     bold: 1
     underline: 2
-    decimals: 1
-    color: "darkgray"
-    cell_color:
-      1: "green!15"
+    decimals: 2
 
-  # ==========================================================
-  # Unsupervised Models Groups (copied from supervised rules)
-  # ==========================================================
-  us_params: "s_params"
-  us_acc: "s_acc"
-  us_top5: "s_top5"
-  us_f1: "s_f1"
-  us_latency: "s_latency"
+  s_params: "params"
+  s_acc: "high_metric"
+  s_top5: "high_metric"
+  s_f1: "high_metric"
+  s_latency: "low_metric"
 
-  # ==========================================================
-  # Custom / Multi-group Tags
-  # ==========================================================
-  top_performer:
-    cell_color: "yellow!25"
-    color: "ForestGreen"
+  us_params: "params"
+  us_acc: "high_metric"
+  us_top5: "high_metric"
+  us_f1: "high_metric"
+  us_latency: "low_metric"
 
 default:
   decimals: 2
