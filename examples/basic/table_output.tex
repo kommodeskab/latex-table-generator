@@ -2,27 +2,19 @@
 \centering
 \begin{threeparttable}
 \caption{
-Classification performance comparison of supervised and unsupervised models.
+Classification performance comparison.
 Best model is \textbf{bold}, second best is \underline{underlined}.
+Arrows indicate direction of improvement ($\uparrow$ higher is better, $\downarrow$ lower is better).
 }
 \label{tab:model_comparison}
 \begin{tabular}{lcccc}
 \toprule
-\textbf{Model}   & \textbf{Params}                                                & \textbf{Acc}                                                                                                                     & \textbf{F1-Score}                                                                                                                & \textbf{Latency (ms)} \\
+\textbf{Model}   & \textbf{Params $\downarrow$}                                   & \textbf{Acc $\uparrow$}                                                                                                          & \textbf{F1-Score $\uparrow$}                                                                                                     & \textbf{Latency (ms) $\downarrow$} \\
 \midrule
-\multicolumn{5}{l}{\textit{Supervised}} \\
-\midrule
-ResNet-18        & \phantom{11}\llap{\textbf{11}}\rlap{\textbf{.7M}}\phantom{.7M} & 0.70 \ensuremath{\pm} 0.01                                                                                                       & 0.69 \ensuremath{\pm} 0.01                                                                                                       & \phantom{12}\llap{\textbf{12}}\rlap{\textbf{.40}}\phantom{.40} \\
-ResNet-50        & 25.6M                                                          & 0.76 \ensuremath{\pm} 0.01                                                                                                       & 0.76 \ensuremath{\pm} 0.01                                                                                                       & \underline{24.80} \\
-ViT-Base         & 86.6M                                                          & \underline{0.82 \ensuremath{\pm} 0.01}                                                                                           & \underline{0.81 \ensuremath{\pm} 0.01}                                                                                           & 45.20 \\
-Swin-Transformer & 88.0M                                                          & \phantom{0.83}\llap{\textbf{0.83}} \rlap{\textbf{\ensuremath{\pm}}}\phantom{\ensuremath{\pm}} \rlap{\textbf{0.01}}\phantom{0.01} & \phantom{0.83}\llap{\textbf{0.83}} \rlap{\textbf{\ensuremath{\pm}}}\phantom{\ensuremath{\pm}} \rlap{\textbf{0.01}}\phantom{0.01} & 52.10 \\
-\midrule
-\multicolumn{5}{l}{\textit{Unsupervised}} \\
-\midrule
-ResNet-18        & \phantom{11}\llap{\textbf{11}}\rlap{\textbf{.7M}}\phantom{.7M} & 0.64 \ensuremath{\pm} 0.01                                                                                                       & 0.63 \ensuremath{\pm} 0.01                                                                                                       & \phantom{12}\llap{\textbf{12}}\rlap{\textbf{.40}}\phantom{.40} \\
-ResNet-50        & 25.6M                                                          & 0.71 \ensuremath{\pm} 0.01                                                                                                       & 0.71 \ensuremath{\pm} 0.01                                                                                                       & \underline{24.80} \\
-ViT-Base         & 86.6M                                                          & \underline{0.77 \ensuremath{\pm} 0.01}                                                                                           & \underline{0.77 \ensuremath{\pm} 0.01}                                                                                           & 45.20 \\
-Swin-Transformer & 88.0M                                                          & \phantom{0.80}\llap{\textbf{0.80}} \rlap{\textbf{\ensuremath{\pm}}}\phantom{\ensuremath{\pm}} \rlap{\textbf{0.01}}\phantom{0.01} & \phantom{0.79}\llap{\textbf{0.79}} \rlap{\textbf{\ensuremath{\pm}}}\phantom{\ensuremath{\pm}} \rlap{\textbf{0.01}}\phantom{0.01} & 52.10 \\
+ResNet-18        & \phantom{11}\llap{\textbf{11}}\rlap{\textbf{.7M}}\phantom{.7M} & 0.70 \ensuremath{\pm} 0.01                                                                                                       & 0.69 \ensuremath{\pm} 0.01                                                                                                       & \phantom{12}\llap{\textbf{12}}\rlap{\textbf{.4}}\phantom{.4} \\
+ResNet-50        & 25.6M                                                          & 0.76 \ensuremath{\pm} 0.01                                                                                                       & 0.76 \ensuremath{\pm} 0.01                                                                                                       & \underline{24.8} \\
+ViT-Base         & 86.6M                                                          & \underline{0.82 \ensuremath{\pm} 0.01}                                                                                           & \underline{0.81 \ensuremath{\pm} 0.01}                                                                                           & 45.2 \\
+Swin-Transformer & 88.0M                                                          & \phantom{0.83}\llap{\textbf{0.83}} \rlap{\textbf{\ensuremath{\pm}}}\phantom{\ensuremath{\pm}} \rlap{\textbf{0.01}}\phantom{0.01} & \phantom{0.83}\llap{\textbf{0.83}} \rlap{\textbf{\ensuremath{\pm}}}\phantom{\ensuremath{\pm}} \rlap{\textbf{0.01}}\phantom{0.01} & 52.1 \\
 \bottomrule
 \end{tabular}
 \end{threeparttable}

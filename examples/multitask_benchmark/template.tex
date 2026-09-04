@@ -3,19 +3,26 @@
 \begin{threeparttable}
 \caption{
 Natural language understanding benchmark results on GLUE tasks (reported as mean $\pm$ SEM over 5 seeds).
-Best results are \textbf{bold}, second best are \underline{underlined}.
-The top overall average model is highlighted in light gray.
+Best results within each model group are \textbf{bold}, second best are \underline{underlined}.
+Arrows indicate direction of improvement ($\uparrow$ higher is better, $\downarrow$ lower is better).
+The top overall model in each category is highlighted in light gray.
 }
 \label{tab:glue_benchmark}
 \begin{tabular}{lcccccc}
 \toprule
-\textbf{Model} & \textbf{MNLI} & \textbf{QNLI} & \textbf{SST-2} & \textbf{CoLA} & \textbf{Average} & \textbf{Latency} \\
+\textbf{Model} & \textbf{MNLI $\uparrow$} & \textbf{QNLI $\uparrow$} & \textbf{SST-2 $\uparrow$} & \textbf{CoLA $\uparrow$} & \textbf{Average $\uparrow$} & \textbf{Latency $\downarrow$} \\
 \midrule
-BERT-Base        & [mnli]{bert.mnli_mean +- bert.mnli_std}                   & [qnli]{bert.qnli_mean +- bert.qnli_std}                   & [sst2]{bert.sst2_mean +- bert.sst2_std}                   & [cola]{bert.cola_mean +- bert.cola_std}                   & [avg]{bert.avg_mean +- bert.avg_std}                   & [latency]{bert.latency} \\
-RoBERTa-Base     & [mnli]{roberta.mnli_mean +- roberta.mnli_std}             & [qnli]{roberta.qnli_mean +- roberta.qnli_std}             & [sst2]{roberta.sst2_mean +- roberta.sst2_std}             & [cola]{roberta.cola_mean +- roberta.cola_std}             & [avg]{roberta.avg_mean +- roberta.avg_std}             & [latency]{roberta.latency} \\
-ELECTRA-Base     & [mnli]{electra.mnli_mean +- electra.mnli_std}             & [qnli]{electra.qnli_mean +- electra.qnli_std}             & [sst2]{electra.sst2_mean +- electra.sst2_std}             & [cola]{electra.cola_mean +- electra.cola_std}             & [avg]{electra.avg_mean +- electra.avg_std}             & [latency]{electra.latency} \\
-DeBERTa-v3       & [mnli]{deberta.mnli_mean +- deberta.mnli_std}             & [qnli]{deberta.qnli_mean +- deberta.qnli_std}             & [sst2]{deberta.sst2_mean +- deberta.sst2_std}             & [cola]{deberta.cola_mean +- deberta.cola_std}             & [avg]{deberta.avg_mean +- deberta.avg_std}             & [latency]{deberta.latency} \\
-LLaMA-1B-Distill & [mnli]{llama_distill.mnli_mean +- llama_distill.mnli_std} & [qnli]{llama_distill.qnli_mean +- llama_distill.qnli_std} & [sst2]{llama_distill.sst2_mean +- llama_distill.sst2_std} & [cola]{llama_distill.cola_mean +- llama_distill.cola_std} & [avg]{llama_distill.avg_mean +- llama_distill.avg_std} & [latency]{llama_distill.latency} \\
+\multicolumn{7}{l}{\textit{Supervised Fine-Tuning}} \\
+\midrule
+BERT-Base        & [s_mnli]{s_bert.mnli_mean +- s_bert.mnli_std}       & [s_qnli]{s_bert.qnli_mean +- s_bert.qnli_std}       & [s_sst2]{s_bert.sst2_mean +- s_bert.sst2_std}       & [s_cola]{s_bert.cola_mean +- s_bert.cola_std}       & [s_avg]{s_bert.avg_mean +- s_bert.avg_std}       & [s_lat]{s_bert.latency} \\
+RoBERTa-Base     & [s_mnli]{s_roberta.mnli_mean +- s_roberta.mnli_std} & [s_qnli]{s_roberta.qnli_mean +- s_roberta.qnli_std} & [s_sst2]{s_roberta.sst2_mean +- s_roberta.sst2_std} & [s_cola]{s_roberta.cola_mean +- s_roberta.cola_std} & [s_avg]{s_roberta.avg_mean +- s_roberta.avg_std} & [s_lat]{s_roberta.latency} \\
+DeBERTa-v3       & [s_mnli]{s_deberta.mnli_mean +- s_deberta.mnli_std} & [s_qnli]{s_deberta.qnli_mean +- s_deberta.qnli_std} & [s_sst2]{s_deberta.sst2_mean +- s_deberta.sst2_std} & [s_cola]{s_deberta.cola_mean +- s_deberta.cola_std} & [s_avg]{s_deberta.avg_mean +- s_deberta.avg_std} & [s_lat]{s_deberta.latency} \\
+\midrule
+\multicolumn{7}{l}{\textit{Unsupervised Representations}} \\
+\midrule
+SimCSE-BERT      & [us_mnli]{us_simcse.mnli_mean +- us_simcse.mnli_std}   & [us_qnli]{us_simcse.qnli_mean +- us_simcse.qnli_std}   & [us_sst2]{us_simcse.sst2_mean +- us_simcse.sst2_std}   & [us_cola]{us_simcse.cola_mean +- us_simcse.cola_std}   & [us_avg]{us_simcse.avg_mean +- us_simcse.avg_std}   & [us_lat]{us_simcse.latency} \\
+ELECTRA-Base     & [us_mnli]{us_electra.mnli_mean +- us_electra.mnli_std} & [us_qnli]{us_electra.qnli_mean +- us_electra.qnli_std} & [us_sst2]{us_electra.sst2_mean +- us_electra.sst2_std} & [us_cola]{us_electra.cola_mean +- us_electra.cola_std} & [us_avg]{us_electra.avg_mean +- us_electra.avg_std} & [us_lat]{us_electra.latency} \\
+LLaMA-Distill    & [us_mnli]{us_llama.mnli_mean +- us_llama.mnli_std}     & [us_qnli]{us_llama.qnli_mean +- us_llama.qnli_std}     & [us_sst2]{us_llama.sst2_mean +- us_llama.sst2_std}     & [us_cola]{us_llama.cola_mean +- us_llama.cola_std}     & [us_avg]{us_llama.avg_mean +- us_llama.avg_std}     & [us_lat]{us_llama.latency} \\
 \bottomrule
 \end{tabular}
 \end{threeparttable}

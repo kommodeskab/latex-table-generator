@@ -1,4 +1,4 @@
-# Multi-task benchmark rules showcasing SEM (Standard Error of Mean) and rule inheritance
+# Multi-task benchmark rules showcasing SEM, rule copying, and separated model groups
 groups:
   # Base task configuration
   task_metric:
@@ -10,23 +10,28 @@ groups:
     # Normalizes sample standard deviation across N=5 seeds into standard error: SEM = std / sqrt(5)
     standard_error_of_mean: 5
 
-  # Tasks inherit from base configuration
-  mnli: "task_metric"
-  qnli: "task_metric"
-  sst2: "task_metric"
-  cola: "task_metric"
-
-  # Overall average with subtle winner cell highlight
-  avg:
+  # Supervised task groups
+  s_mnli: "task_metric"
+  s_qnli: "task_metric"
+  s_sst2: "task_metric"
+  s_cola: "task_metric"
+  s_avg:
     copy_from: "task_metric"
     cell_color_1: "gray!15"
-
-  latency:
+  s_lat:
     higher_is_better: false
     bold: 1
     underline: 2
     decimals: 1
     unit: " ms"
+
+  # Unsupervised task groups copy rules from supervised groups for independent ranking
+  us_mnli: "s_mnli"
+  us_qnli: "s_qnli"
+  us_sst2: "s_sst2"
+  us_cola: "s_cola"
+  us_avg: "s_avg"
+  us_lat: "s_lat"
 
 default:
   decimals: 1

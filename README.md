@@ -1,10 +1,36 @@
 # LaTeX Table Generator (`latex-table-generator`)
 
-A lightweight, flexible Python package to automatically generate publication-ready LaTeX tables from `.csv` metric files, custom `.txt` template files, and reusable `.yaml` rule files.
+A lightweight, flexible Python package to automatically generate publication-ready LaTeX tables from `.csv` metric files, custom `.txt` / `.tex` template files, and reusable `.yaml` rule files.
 
-<p align="center">
-  <img src="examples/table_output.png" alt="Example LaTeX Table Output" width="100%"/>
-</p>
+> [!NOTE]
+> All runnable examples and source templates can be found in the [`examples/`](examples) directory. All metric values and benchmark results in these examples are synthetic data generated for demonstration purposes only.
+
+---
+
+## Publication-Ready Table Gallery
+
+Here is a showcase of what `latex-table-generator` can produce directly for scientific papers:
+
+### 1. Multi-Task Benchmark with Model Group Separation & SEM
+Demonstrates separating models into distinct categories (Supervised vs. Unsupervised) using a horizontal dividing line and independent per-group rankings, Standard Error of the Mean (`standard_error_of_mean: 5`) over 5 seeds, rule copying/inheritance, best bolded, second-best underlined, and direction arrows ($\uparrow, \downarrow$):
+
+![GLUE Multi-task Benchmark with SEM](examples/multitask_benchmark/table_output.png)
+
+*Source files: [`examples/multitask_benchmark/metrics.csv`](examples/multitask_benchmark/metrics.csv), [`rules.yaml`](examples/multitask_benchmark/rules.yaml), [`template.tex`](examples/multitask_benchmark/template.tex).*
+
+### 2. Robustness Heatmap with Continuous Colormap Gradients
+Demonstrates continuous cell background shading using the scientific `Blues` colormap across corruption types, automatic high-contrast text color switching (white on dark cells), SI prefix scaling for model parameter counts, and direction arrows ($\uparrow, \downarrow$):
+
+![ImageNet-C Corruption Robustness Heatmap](examples/gradient_heatmap/table_output.png)
+
+*Source files: [`examples/gradient_heatmap/metrics.csv`](examples/gradient_heatmap/metrics.csv), [`rules.yaml`](examples/gradient_heatmap/rules.yaml), [`template.tex`](examples/gradient_heatmap/template.tex).*
+
+### 3. Edge Deployment Efficiency & Pareto Trade-offs
+Demonstrates hardware-aware edge deployment metrics with mixed directionalities ($\uparrow$ accuracy, $\downarrow$ FLOPs, Latency, Peak RAM, Energy), SI prefix auto-scaling (`219M`), physical unit suffixes (`ms`, `MB`, `mJ`, `\%`), and precise digit/decimal alignment:
+
+![On-Device Inference Efficiency](examples/efficiency_pareto/table_output.png)
+
+*Source files: [`examples/efficiency_pareto/metrics.csv`](examples/efficiency_pareto/metrics.csv), [`rules.yaml`](examples/efficiency_pareto/rules.yaml), [`template.tex`](examples/efficiency_pareto/template.tex).*
 
 ---
 
@@ -13,9 +39,12 @@ A lightweight, flexible Python package to automatically generate publication-rea
 - **CSV Metrics Integration**: Load floating-point metrics with row and column headers directly from `.csv` files.
 - **Intuitive Placeholders**: Insert metric values into table cells using `{row.column}` syntax.
 - **Built-in Uncertainty Support**: Format mean and standard deviation pairs effortlessly using `{row.mean +- row.std}`.
+- **Standard Error of Mean (SEM)**: Automatically normalize standard deviation to standard error of the mean via `standard_error_of_mean: N`.
 - **Cell Grouping & Rule Files**: Assign cells to groups (e.g. `[accuracy]`, `[latency]`, `[accuracy, best_model]`) and define formatting rules in a reusable `.yaml` file:
   - **Decimals per group**: Set individual decimal precision for each group.
   - **Extremum Highlighting**: Automatically bold and/or underline the highest or lowest numbers in each group (ignoring uncertainties for comparison).
+  - **Rule Copying & Inheritance**: Reuse rule configurations across groups using direct string aliases or `copy_from` overrides.
+  - **Color Gradients & Heatmaps**: Continuous cell background and text coloring using scientific colormaps (`Blues`, `viridis`, `RdYlGn`, etc.).
   - **Group Text Colors**: Assign custom colors to groups (`blue`, `red`, `ForestGreen`, `#FF5733`).
   - **Multi-group Cells**: Cells can belong to multiple groups and inherit combined rules.
 - **Automatic Column Number Alignment**: Automatically aligns decimal points, minus signs, and uncertainty symbols across rows (via LaTeX `\hphantom{-}` and digit padding), ensuring publication-grade vertical alignment even when columns mix positive and negative numbers.
@@ -40,21 +69,17 @@ uv pip install .
 
 ---
 
-## Quickstart (Basic Example)
+## Basic Example (Step-by-Step Guide)
 
 ### 1. Metrics File (`examples/basic/metrics.csv`)
 
 <!-- START:examples/basic/metrics.csv -->
 ```csv
 model,acc_mean,acc_std,f1_mean,f1_std,latency,params
-s_res18,0.6975,0.0085,0.6920,0.0088,12.4,11689512
-s_res50,0.7615,0.0072,0.7580,0.0075,24.8,25557032
-s_vit,0.8180,0.0065,0.8145,0.0068,45.2,86567656
-s_swin,0.8350,0.0058,0.8310,0.0060,52.1,87985448
-us_res18,0.6350,0.0112,0.6285,0.0115,12.4,11689512
-us_res50,0.7120,0.0095,0.7075,0.0098,24.8,25557032
-us_vit,0.7745,0.0082,0.7710,0.0085,45.2,86567656
-us_swin,0.7980,0.0076,0.7940,0.0078,52.1,87985448
+res18,0.6975,0.0085,0.6920,0.0088,12.4,11689512
+res50,0.7615,0.0072,0.7580,0.0075,24.8,25557032
+vit,0.8180,0.0065,0.8145,0.0068,45.2,86567656
+swin,0.8350,0.0058,0.8310,0.0060,52.1,87985448
 ```
 <!-- END:examples/basic/metrics.csv -->
 
@@ -64,7 +89,7 @@ Define reusable formatting rules for each group:
 
 <!-- START:examples/basic/rules.yaml -->
 ```yaml
-# Group rules configuration for LaTeX table generator
+# Basic group rules configuration for LaTeX table generator
 groups:
   params:
     higher_is_better: false
@@ -72,27 +97,23 @@ groups:
     si_prefix: true
     decimals: 1
 
-  high_metric:
+  acc:
     higher_is_better: true
     bold: 1
     underline: 2
     decimals: 2
 
-  low_metric:
-    copy_from: high_metric
+  f1:
+    higher_is_better: true
+    bold: 1
+    underline: 2
+    decimals: 2
+
+  latency:
     higher_is_better: false
-
-  s_params: "params"
-  s_acc: "high_metric"
-  s_top5: "high_metric"
-  s_f1: "high_metric"
-  s_latency: "low_metric"
-
-  us_params: "params"
-  us_acc: "high_metric"
-  us_top5: "high_metric"
-  us_f1: "high_metric"
-  us_latency: "low_metric"
+    bold: 1
+    underline: 2
+    decimals: 1
 
 default:
   decimals: 2
@@ -109,27 +130,19 @@ Assign cells to groups using `[group_name]{...}` or `{... | group_name}`:
 \centering
 \begin{threeparttable}
 \caption{
-Classification performance comparison of supervised and unsupervised models.
+Classification performance comparison.
 Best model is \textbf{bold}, second best is \underline{underlined}.
+Arrows indicate direction of improvement ($\uparrow$ higher is better, $\downarrow$ lower is better).
 }
 \label{tab:model_comparison}
 \begin{tabular}{lcccc}
 \toprule
-\textbf{Model} & \textbf{Params} & \textbf{Acc} & \textbf{F1-Score} & \textbf{Latency (ms)} \\
+\textbf{Model} & \textbf{Params $\downarrow$} & \textbf{Acc $\uparrow$} & \textbf{F1-Score $\uparrow$} & \textbf{Latency (ms) $\downarrow$} \\
 \midrule
-\multicolumn{5}{l}{\textit{Supervised}} \\
-\midrule
-ResNet-18        & [s_params]{s_res18.params}   & [s_acc]{s_res18.acc_mean +- s_res18.acc_std}    & [s_f1]{s_res18.f1_mean +- s_res18.f1_std}    & [s_latency]{s_res18.latency} \\
-ResNet-50        & [s_params]{s_res50.params}   & [s_acc]{s_res50.acc_mean +- s_res50.acc_std}    & [s_f1]{s_res50.f1_mean +- s_res50.f1_std}    & [s_latency]{s_res50.latency} \\
-ViT-Base         & [s_params]{s_vit.params}     & [s_acc]{s_vit.acc_mean +- s_vit.acc_std}        & [s_f1]{s_vit.f1_mean +- s_vit.f1_std}        & [s_latency]{s_vit.latency} \\
-Swin-Transformer & [s_params]{s_swin.params}    & [s_acc]{s_swin.acc_mean +- s_swin.acc_std}      & [s_f1]{s_swin.f1_mean +- s_swin.f1_std}      & [s_latency]{s_swin.latency} \\
-\midrule
-\multicolumn{5}{l}{\textit{Unsupervised}} \\
-\midrule
-ResNet-18        & [us_params]{us_res18.params} & [us_acc]{us_res18.acc_mean +- us_res18.acc_std} & [us_f1]{us_res18.f1_mean +- us_res18.f1_std} & [us_latency]{us_res18.latency} \\
-ResNet-50        & [us_params]{us_res50.params} & [us_acc]{us_res50.acc_mean +- us_res50.acc_std} & [us_f1]{us_res50.f1_mean +- us_res50.f1_std} & [us_latency]{us_res50.latency} \\
-ViT-Base         & [us_params]{us_vit.params}   & [us_acc]{us_vit.acc_mean +- us_vit.acc_std}     & [us_f1]{us_vit.f1_mean +- us_vit.f1_std}     & [us_latency]{us_vit.latency} \\
-Swin-Transformer & [us_params]{us_swin.params}  & [us_acc]{us_swin.acc_mean +- us_swin.acc_std}   & [us_f1]{us_swin.f1_mean +- us_swin.f1_std}   & [us_latency]{us_swin.latency} \\
+ResNet-18        & [params]{res18.params} & [acc]{res18.acc_mean +- res18.acc_std} & [f1]{res18.f1_mean +- res18.f1_std} & [latency]{res18.latency} \\
+ResNet-50        & [params]{res50.params} & [acc]{res50.acc_mean +- res50.acc_std} & [f1]{res50.f1_mean +- res50.f1_std} & [latency]{res50.latency} \\
+ViT-Base         & [params]{vit.params}   & [acc]{vit.acc_mean +- vit.acc_std}     & [f1]{vit.f1_mean +- vit.f1_std}     & [latency]{vit.latency} \\
+Swin-Transformer & [params]{swin.params}  & [acc]{swin.acc_mean +- swin.acc_std}   & [f1]{swin.f1_mean +- swin.f1_std}   & [latency]{swin.latency} \\
 \bottomrule
 \end{tabular}
 \end{threeparttable}
@@ -168,27 +181,19 @@ compile_table(
 \centering
 \begin{threeparttable}
 \caption{
-Classification performance comparison of supervised and unsupervised models.
+Classification performance comparison.
 Best model is \textbf{bold}, second best is \underline{underlined}.
+Arrows indicate direction of improvement ($\uparrow$ higher is better, $\downarrow$ lower is better).
 }
 \label{tab:model_comparison}
 \begin{tabular}{lcccc}
 \toprule
-\textbf{Model}   & \textbf{Params}                                                & \textbf{Acc}                                                                                                                     & \textbf{F1-Score}                                                                                                                & \textbf{Latency (ms)} \\
+\textbf{Model}   & \textbf{Params $\downarrow$}                                   & \textbf{Acc $\uparrow$}                                                                                                          & \textbf{F1-Score $\uparrow$}                                                                                                     & \textbf{Latency (ms) $\downarrow$} \\
 \midrule
-\multicolumn{5}{l}{\textit{Supervised}} \\
-\midrule
-ResNet-18        & \phantom{11}\llap{\textbf{11}}\rlap{\textbf{.7M}}\phantom{.7M} & 0.70 \ensuremath{\pm} 0.01                                                                                                       & 0.69 \ensuremath{\pm} 0.01                                                                                                       & \phantom{12}\llap{\textbf{12}}\rlap{\textbf{.40}}\phantom{.40} \\
-ResNet-50        & 25.6M                                                          & 0.76 \ensuremath{\pm} 0.01                                                                                                       & 0.76 \ensuremath{\pm} 0.01                                                                                                       & \underline{24.80} \\
-ViT-Base         & 86.6M                                                          & \underline{0.82 \ensuremath{\pm} 0.01}                                                                                           & \underline{0.81 \ensuremath{\pm} 0.01}                                                                                           & 45.20 \\
-Swin-Transformer & 88.0M                                                          & \phantom{0.83}\llap{\textbf{0.83}} \rlap{\textbf{\ensuremath{\pm}}}\phantom{\ensuremath{\pm}} \rlap{\textbf{0.01}}\phantom{0.01} & \phantom{0.83}\llap{\textbf{0.83}} \rlap{\textbf{\ensuremath{\pm}}}\phantom{\ensuremath{\pm}} \rlap{\textbf{0.01}}\phantom{0.01} & 52.10 \\
-\midrule
-\multicolumn{5}{l}{\textit{Unsupervised}} \\
-\midrule
-ResNet-18        & \phantom{11}\llap{\textbf{11}}\rlap{\textbf{.7M}}\phantom{.7M} & 0.64 \ensuremath{\pm} 0.01                                                                                                       & 0.63 \ensuremath{\pm} 0.01                                                                                                       & \phantom{12}\llap{\textbf{12}}\rlap{\textbf{.40}}\phantom{.40} \\
-ResNet-50        & 25.6M                                                          & 0.71 \ensuremath{\pm} 0.01                                                                                                       & 0.71 \ensuremath{\pm} 0.01                                                                                                       & \underline{24.80} \\
-ViT-Base         & 86.6M                                                          & \underline{0.77 \ensuremath{\pm} 0.01}                                                                                           & \underline{0.77 \ensuremath{\pm} 0.01}                                                                                           & 45.20 \\
-Swin-Transformer & 88.0M                                                          & \phantom{0.80}\llap{\textbf{0.80}} \rlap{\textbf{\ensuremath{\pm}}}\phantom{\ensuremath{\pm}} \rlap{\textbf{0.01}}\phantom{0.01} & \phantom{0.79}\llap{\textbf{0.79}} \rlap{\textbf{\ensuremath{\pm}}}\phantom{\ensuremath{\pm}} \rlap{\textbf{0.01}}\phantom{0.01} & 52.10 \\
+ResNet-18        & \phantom{11}\llap{\textbf{11}}\rlap{\textbf{.7M}}\phantom{.7M} & 0.70 \ensuremath{\pm} 0.01                                                                                                       & 0.69 \ensuremath{\pm} 0.01                                                                                                       & \phantom{12}\llap{\textbf{12}}\rlap{\textbf{.4}}\phantom{.4} \\
+ResNet-50        & 25.6M                                                          & 0.76 \ensuremath{\pm} 0.01                                                                                                       & 0.76 \ensuremath{\pm} 0.01                                                                                                       & \underline{24.8} \\
+ViT-Base         & 86.6M                                                          & \underline{0.82 \ensuremath{\pm} 0.01}                                                                                           & \underline{0.81 \ensuremath{\pm} 0.01}                                                                                           & 45.2 \\
+Swin-Transformer & 88.0M                                                          & \phantom{0.83}\llap{\textbf{0.83}} \rlap{\textbf{\ensuremath{\pm}}}\phantom{\ensuremath{\pm}} \rlap{\textbf{0.01}}\phantom{0.01} & \phantom{0.83}\llap{\textbf{0.83}} \rlap{\textbf{\ensuremath{\pm}}}\phantom{\ensuremath{\pm}} \rlap{\textbf{0.01}}\phantom{0.01} & 52.1 \\
 \bottomrule
 \end{tabular}
 \end{threeparttable}
@@ -198,34 +203,7 @@ Swin-Transformer & 88.0M                                                        
 
 ### 5. Compiled Visual Preview
 
-![Example LaTeX Table Output](examples/basic/table_output.png)
-
----
-
-## Examples Gallery
-
-Explore realistic, publication-ready table examples in the [`examples/`](examples) directory:
-
-### 1. Robustness Heatmap with Continuous Gradients (`examples/gradient_heatmap/`)
-Demonstrates continuous cell background shading using the scientific `Blues` colormap across corruption types, automatic high-contrast text color switching (white on dark cells), SI prefix scaling for model parameter counts, and lower-is-better corruption error rankings:
-
-![ImageNet-C Corruption Robustness Heatmap](examples/gradient_heatmap/table_output.png)
-
-*Source files: [`examples/gradient_heatmap/metrics.csv`](examples/gradient_heatmap/metrics.csv), [`rules.yaml`](examples/gradient_heatmap/rules.yaml), [`template.tex`](examples/gradient_heatmap/template.tex).*
-
-### 2. Multi-Task Benchmark with Standard Error of Mean (`examples/multitask_benchmark/`)
-Demonstrates standard error of the mean normalization (`standard_error_of_mean: 5`) over 5 random seeds, rule copying/inheritance (`copy_from: "task_metric"`), best bolded, second-best underlined, and a subtle winner cell background tint (`cell_color_1: "gray!15"`):
-
-![GLUE Multi-task Benchmark with SEM](examples/multitask_benchmark/table_output.png)
-
-*Source files: [`examples/multitask_benchmark/metrics.csv`](examples/multitask_benchmark/metrics.csv), [`rules.yaml`](examples/multitask_benchmark/rules.yaml), [`template.tex`](examples/multitask_benchmark/template.tex).*
-
-### 3. Edge Deployment Efficiency & Pareto Trade-offs (`examples/efficiency_pareto/`)
-Demonstrates hardware-aware edge deployment metrics with mixed directionalities (`higher_is_better: false` for cost metrics like FLOPs, Latency, Peak RAM, and Energy), SI prefix auto-scaling (`219M`), physical unit suffixes (`ms`, `MB`, `mJ`, `\%`), and precise digit/decimal alignment:
-
-![On-Device Inference Efficiency](examples/efficiency_pareto/table_output.png)
-
-*Source files: [`examples/efficiency_pareto/metrics.csv`](examples/efficiency_pareto/metrics.csv), [`rules.yaml`](examples/efficiency_pareto/rules.yaml), [`template.tex`](examples/efficiency_pareto/template.tex).*
+![Basic Example LaTeX Table Output](examples/basic/table_output.png)
 
 ---
 

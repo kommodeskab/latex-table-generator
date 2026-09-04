@@ -1,4 +1,4 @@
-# Group rules configuration for LaTeX table generator
+# Basic group rules configuration for LaTeX table generator
 groups:
   params:
     higher_is_better: false
@@ -6,27 +6,23 @@ groups:
     si_prefix: true
     decimals: 1
 
-  high_metric:
+  acc:
     higher_is_better: true
     bold: 1
     underline: 2
     decimals: 2
 
-  low_metric:
-    copy_from: high_metric
+  f1:
+    higher_is_better: true
+    bold: 1
+    underline: 2
+    decimals: 2
+
+  latency:
     higher_is_better: false
-
-  s_params: "params"
-  s_acc: "high_metric"
-  s_top5: "high_metric"
-  s_f1: "high_metric"
-  s_latency: "low_metric"
-
-  us_params: "params"
-  us_acc: "high_metric"
-  us_top5: "high_metric"
-  us_f1: "high_metric"
-  us_latency: "low_metric"
+    bold: 1
+    underline: 2
+    decimals: 1
 
 default:
   decimals: 2

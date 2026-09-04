@@ -9,7 +9,7 @@ Lowest Mean Corruption Error (mCE $\downarrow$) is \textbf{bold}, second lowest 
 \label{tab:robustness_heatmap}
 \begin{tabular}{lcccccc}
 \toprule
-\textbf{Model} & \textbf{Params} & \textbf{Clean (\%)} & \textbf{Noise (\%)} & \textbf{Blur (\%)} & \textbf{Weather (\%)} & \textbf{mCE $\downarrow$} \\
+\textbf{Model} & \textbf{Params $\downarrow$} & \textbf{Clean (\%) $\uparrow$} & \textbf{Noise (\%) $\uparrow$} & \textbf{Blur (\%) $\uparrow$} & \textbf{Weather (\%) $\uparrow$} & \textbf{mCE $\downarrow$} \\
 \midrule
 ResNet-50       & [params]{resnet50.params}   & [corruption]{resnet50.clean}   & [corruption]{resnet50.noise}   & [corruption]{resnet50.blur}   & [corruption]{resnet50.weather}   & [mce]{resnet50.mce} \\
 ConvNeXt-T      & [params]{convnext_t.params} & [corruption]{convnext_t.clean} & [corruption]{convnext_t.noise} & [corruption]{convnext_t.blur} & [corruption]{convnext_t.weather} & [mce]{convnext_t.mce} \\
