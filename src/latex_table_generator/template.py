@@ -953,6 +953,22 @@ class TemplateRenderer:
         return result
 
 
+def _find_unescaped_percent(line: str) -> int:
+    """Find the index of the first unescaped '%' starting a comment, or -1."""
+    i = 0
+    while i < len(line):
+        if line[i] == "%":
+            backslash_count = 0
+            j = i - 1
+            while j >= 0 and line[j] == "\\":
+                backslash_count += 1
+                j -= 1
+            if backslash_count % 2 == 0:
+                return i
+        i += 1
+    return -1
+
+
 def align_latex_table(latex_str: str) -> str:
     """Align '&' and '\\\\' columns across rows in a LaTeX table for clean formatting."""
     lines = latex_str.splitlines()
@@ -975,13 +991,14 @@ def align_latex_table(latex_str: str) -> str:
             continue
 
         if "&" in line:
-            # Check for trailing comment
-            comment = ""
-            row_content = line
-            if "%" in line:
-                parts = line.split("%", 1)
-                row_content = parts[0]
-                comment = "%" + parts[1]
+            # Check for trailing comment (ignoring escaped \%)
+            comment_idx = _find_unescaped_percent(line)
+            if comment_idx != -1:
+                row_content = line[:comment_idx]
+                comment = line[comment_idx:]
+            else:
+                comment = ""
+                row_content = line
 
             # Check for trailing \\ or \hline
             terminator = ""

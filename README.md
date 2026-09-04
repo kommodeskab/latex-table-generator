@@ -40,11 +40,11 @@ uv pip install .
 
 ---
 
-## Quickstart
+## Quickstart (Basic Example)
 
-### 1. Metrics File (`examples/metrics.csv`)
+### 1. Metrics File (`examples/basic/metrics.csv`)
 
-<!-- START:examples/metrics.csv -->
+<!-- START:examples/basic/metrics.csv -->
 ```csv
 model,acc_mean,acc_std,f1_mean,f1_std,latency,params
 s_res18,0.6975,0.0085,0.6920,0.0088,12.4,11689512
@@ -56,19 +56,16 @@ us_res50,0.7120,0.0095,0.7075,0.0098,24.8,25557032
 us_vit,0.7745,0.0082,0.7710,0.0085,45.2,86567656
 us_swin,0.7980,0.0076,0.7940,0.0078,52.1,87985448
 ```
-<!-- END:examples/metrics.csv -->
+<!-- END:examples/basic/metrics.csv -->
 
-### 2. Group Rules Configuration (`examples/rules.yaml`)
+### 2. Group Rules Configuration (`examples/basic/rules.yaml`)
 
 Define reusable formatting rules for each group:
 
-<!-- START:examples/rules.yaml -->
+<!-- START:examples/basic/rules.yaml -->
 ```yaml
 # Group rules configuration for LaTeX table generator
 groups:
-  # ==========================================================
-  # Supervised Models Groups
-  # ==========================================================
   params:
     higher_is_better: false
     bold: 1
@@ -100,13 +97,13 @@ groups:
 default:
   decimals: 2
 ```
-<!-- END:examples/rules.yaml -->
+<!-- END:examples/basic/rules.yaml -->
 
-### 3. Table Template (`examples/template.tex`)
+### 3. Table Template (`examples/basic/template.tex`)
 
 Assign cells to groups using `[group_name]{...}` or `{... | group_name}`:
 
-<!-- START:examples/template.tex -->
+<!-- START:examples/basic/template.tex -->
 ```latex
 \begin{table}[htbp]
 \centering
@@ -138,7 +135,7 @@ Swin-Transformer & [us_params]{us_swin.params}  & [us_acc]{us_swin.acc_mean +- u
 \end{threeparttable}
 \end{table}
 ```
-<!-- END:examples/template.tex -->
+<!-- END:examples/basic/template.tex -->
 
 ### 4. Generate & Render in Python
 
@@ -147,25 +144,25 @@ from latex_table_generator import compile_table, generate_latex_table
 
 # Generate LaTeX table code
 latex_code = generate_latex_table(
-    csv_path="examples/metrics.csv",
-    template_path="examples/template.tex",
-    rules_path="examples/rules.yaml",
-    output_path="examples/table_output.tex",
+    csv_path="examples/basic/metrics.csv",
+    template_path="examples/basic/template.tex",
+    rules_path="examples/basic/rules.yaml",
+    output_path="examples/basic/table_output.tex",
     align_columns=True,
 )
 
 # Optional: compile directly to PDF and PNG preview
 compile_table(
-    table_source="examples/table_output.tex",
-    output_pdf="examples/table_output.pdf",
-    output_png="examples/table_output.png",
+    table_source="examples/basic/table_output.tex",
+    output_pdf="examples/basic/table_output.pdf",
+    output_png="examples/basic/table_output.png",
     dpi=300,
 )
 ```
 
-**Generated LaTeX Output (`examples/table_output.tex`):**
+**Generated LaTeX Output (`examples/basic/table_output.tex`):**
 
-<!-- START:examples/table_output.tex -->
+<!-- START:examples/basic/table_output.tex -->
 ```latex
 \begin{table}[htbp]
 \centering
@@ -197,11 +194,38 @@ Swin-Transformer & 88.0M                                                        
 \end{threeparttable}
 \end{table}
 ```
-<!-- END:examples/table_output.tex -->
+<!-- END:examples/basic/table_output.tex -->
 
 ### 5. Compiled Visual Preview
 
-![Example LaTeX Table Output](examples/table_output.png)
+![Example LaTeX Table Output](examples/basic/table_output.png)
+
+---
+
+## Examples Gallery
+
+Explore realistic, publication-ready table examples in the [`examples/`](examples) directory:
+
+### 1. Robustness Heatmap with Continuous Gradients (`examples/gradient_heatmap/`)
+Demonstrates continuous cell background shading using the scientific `Blues` colormap across corruption types, automatic high-contrast text color switching (white on dark cells), SI prefix scaling for model parameter counts, and lower-is-better corruption error rankings:
+
+![ImageNet-C Corruption Robustness Heatmap](examples/gradient_heatmap/table_output.png)
+
+*Source files: [`examples/gradient_heatmap/metrics.csv`](examples/gradient_heatmap/metrics.csv), [`rules.yaml`](examples/gradient_heatmap/rules.yaml), [`template.tex`](examples/gradient_heatmap/template.tex).*
+
+### 2. Multi-Task Benchmark with Standard Error of Mean (`examples/multitask_benchmark/`)
+Demonstrates standard error of the mean normalization (`standard_error_of_mean: 5`) over 5 random seeds, rule copying/inheritance (`copy_from: "task_metric"`), best bolded, second-best underlined, and a subtle winner cell background tint (`cell_color_1: "gray!15"`):
+
+![GLUE Multi-task Benchmark with SEM](examples/multitask_benchmark/table_output.png)
+
+*Source files: [`examples/multitask_benchmark/metrics.csv`](examples/multitask_benchmark/metrics.csv), [`rules.yaml`](examples/multitask_benchmark/rules.yaml), [`template.tex`](examples/multitask_benchmark/template.tex).*
+
+### 3. Edge Deployment Efficiency & Pareto Trade-offs (`examples/efficiency_pareto/`)
+Demonstrates hardware-aware edge deployment metrics with mixed directionalities (`higher_is_better: false` for cost metrics like FLOPs, Latency, Peak RAM, and Energy), SI prefix auto-scaling (`219M`), physical unit suffixes (`ms`, `MB`, `mJ`, `\%`), and precise digit/decimal alignment:
+
+![On-Device Inference Efficiency](examples/efficiency_pareto/table_output.png)
+
+*Source files: [`examples/efficiency_pareto/metrics.csv`](examples/efficiency_pareto/metrics.csv), [`rules.yaml`](examples/efficiency_pareto/rules.yaml), [`template.tex`](examples/efficiency_pareto/template.tex).*
 
 ---
 

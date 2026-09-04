@@ -1,0 +1,22 @@
+\begin{table}[htbp]
+\centering
+\begin{threeparttable}
+\caption{
+On-device inference efficiency and accuracy on Raspberry Pi 4 (Cortex-A72 @ 1.5\,GHz).
+Best metrics are \textbf{bold}, second best are \underline{underlined}.
+Lower is better ($\downarrow$) for computational cost, latency, memory footprint, and energy.
+}
+\label{tab:edge_efficiency}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Model}     & \textbf{Top-1 Acc}                                               & \textbf{FLOPs $\downarrow$}        & \textbf{Latency $\downarrow$}                                                & \textbf{Peak RAM $\downarrow$}                                     & \textbf{Energy $\downarrow$} \\
+\midrule
+MobileNetV3-Large  & 75.2\%                                                           & 219M                               & \hphantom{0}8.4 ms                                                           & 42.1 MB                                                            & 18.2 mJ \\
+EfficientNet-Lite0 & 75.1\%                                                           & 385M                               & 11.2 ms                                                                      & 58.4 MB                                                            & 24.6 mJ \\
+ShuffleNetV2-1.5x  & 72.6\%                                                           & \phantom{146M}\llap{\textbf{146M}} & \hphantom{0}\phantom{6}\llap{\textbf{6}}\rlap{\textbf{.1 ms}}\phantom{.1 ms} & \phantom{36}\llap{\textbf{36}}\rlap{\textbf{.8 MB}}\phantom{.8 MB} & \phantom{13}\llap{\textbf{13}}\rlap{\textbf{.5 mJ}}\phantom{.5 mJ} \\
+GhostNetV2-1.3x    & \underline{75.3\%}                                               & 167M                               & \hphantom{0}\underline{7.2 ms}                                               & \underline{39.5 MB}                                                & \underline{15.1 mJ} \\
+EdgeNeXt-Small     & \phantom{79}\llap{\textbf{79}}\rlap{\textbf{.4\%}}\phantom{.4\%} & 260M                               & 10.8 ms                                                                      & 51.2 MB                                                            & 22.8 mJ \\
+\bottomrule
+\end{tabular}
+\end{threeparttable}
+\end{table}

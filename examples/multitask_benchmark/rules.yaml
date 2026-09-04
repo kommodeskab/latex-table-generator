@@ -1,0 +1,33 @@
+# Multi-task benchmark rules showcasing SEM (Standard Error of Mean) and rule inheritance
+groups:
+  # Base task configuration
+  task_metric:
+    higher_is_better: true
+    scale: 100
+    decimals: 1
+    bold: 1
+    underline: 2
+    # Normalizes sample standard deviation across N=5 seeds into standard error: SEM = std / sqrt(5)
+    standard_error_of_mean: 5
+
+  # Tasks inherit from base configuration
+  mnli: "task_metric"
+  qnli: "task_metric"
+  sst2: "task_metric"
+  cola: "task_metric"
+
+  # Overall average with subtle winner cell highlight
+  avg:
+    copy_from: "task_metric"
+    cell_color_1: "gray!15"
+
+  latency:
+    higher_is_better: false
+    bold: 1
+    underline: 2
+    decimals: 1
+    unit: " ms"
+
+default:
+  decimals: 1
+  align_numbers: true

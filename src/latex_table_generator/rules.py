@@ -162,6 +162,8 @@ class GroupRule:
         unit = data.get("unit") or data.get("units") or data.get("suffix")
         if unit is not None:
             unit = str(unit)
+            if "%" in unit and r"\%" not in unit:
+                unit = unit.replace("%", r"\%")
 
         styles_raw = data.get("styles", [])
         styles: list[str] = []

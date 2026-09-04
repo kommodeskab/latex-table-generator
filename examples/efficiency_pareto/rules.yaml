@@ -1,0 +1,39 @@
+# Hardware efficiency rules showcasing mixed directionality, units, and SI prefix auto-scaling
+groups:
+  acc:
+    higher_is_better: true
+    bold: 1
+    underline: 2
+    decimals: 1
+    unit: "\\%"
+
+  flops:
+    higher_is_better: false
+    bold: 1
+    si_prefix: true
+    decimals: 0
+
+  latency:
+    higher_is_better: false
+    bold: 1
+    underline: 2
+    decimals: 1
+    unit: " ms"
+
+  memory:
+    higher_is_better: false
+    bold: 1
+    underline: 2
+    decimals: 1
+    unit: " MB"
+
+  energy:
+    higher_is_better: false
+    bold: 1
+    underline: 2
+    decimals: 1
+    unit: " mJ"
+
+default:
+  decimals: 1
+  align_numbers: true

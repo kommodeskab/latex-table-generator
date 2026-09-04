@@ -1034,3 +1034,17 @@ def test_rule_copy_missing_target():
                 }
             }
         )
+
+
+def test_rule_unit_percent_escaping():
+    """Verify raw '%' in unit is automatically escaped to '\\%'."""
+    rules = RulesConfig.from_dict(
+        {
+            "groups": {
+                "acc": {"unit": "%"},
+                "already_escaped": {"unit": r"\%"},
+            }
+        }
+    )
+    assert rules.get_rule("acc").unit == r"\%"
+    assert rules.get_rule("already_escaped").unit == r"\%"

@@ -1,0 +1,26 @@
+# Rule configuration showcasing color gradients (heatmaps) across corruption benchmarks
+groups:
+  params:
+    higher_is_better: false
+    bold: 1
+    si_prefix: true
+    decimals: 1
+
+  corruption:
+    higher_is_better: true
+    decimals: 1
+    color_gradient: true
+    colormap: "Blues"
+    vmin: 40.0
+    vmax: 85.0
+    gradient_target: "cell"
+    gradient_text_contrast: true
+
+  mce:
+    higher_is_better: false
+    bold: 1
+    underline: 2
+    decimals: 1
+
+default:
+  decimals: 1

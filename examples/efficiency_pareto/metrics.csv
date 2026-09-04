@@ -1,0 +1,6 @@
+model,accuracy,flops,latency,memory,energy
+mobilenet_v3,75.2,219000000,8.4,42.1,18.2
+effnet_lite0,75.1,385000000,11.2,58.4,24.6
+shufflenet_v2,72.6,146000000,6.1,36.8,13.5
+ghostnet_v2,75.3,167000000,7.2,39.5,15.1
+edgenext_s,79.4,260000000,10.8,51.2,22.8

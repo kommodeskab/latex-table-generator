@@ -125,3 +125,21 @@ def test_quoted_row_name():
     template = "Model: {'Model 1.0'.acc}"
     result = renderer.render(template)
     assert result == "Model: 0.89"
+
+
+def test_align_latex_table_with_percent_signs():
+    from latex_table_generator.template import align_latex_table
+
+    table = (
+        "\\textbf{Model} & \\textbf{Acc (\\%)} & \\textbf{Latency} \\\\ % header comment\n"
+        "ModelA & 85.2\\% & 10.5 ms \\\\\n"
+        "ModelB & 90.1\\% & 8.2 ms \\\\ % best model\n"
+    )
+    aligned = align_latex_table(table)
+    # Ensure escaped \% does not get treated as a comment delimiter
+    assert r"\textbf{Acc (\%)}" in aligned
+    assert r"85.2\%" in aligned
+    assert r"90.1\%" in aligned
+    # Ensure true comments remain at the end of rows
+    assert "% header comment" in aligned
+    assert "% best model" in aligned

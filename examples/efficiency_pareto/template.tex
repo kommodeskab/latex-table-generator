@@ -1,0 +1,22 @@
+\begin{table}[htbp]
+\centering
+\begin{threeparttable}
+\caption{
+On-device inference efficiency and accuracy on Raspberry Pi 4 (Cortex-A72 @ 1.5\,GHz).
+Best metrics are \textbf{bold}, second best are \underline{underlined}.
+Lower is better ($\downarrow$) for computational cost, latency, memory footprint, and energy.
+}
+\label{tab:edge_efficiency}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Model} & \textbf{Top-1 Acc} & \textbf{FLOPs $\downarrow$} & \textbf{Latency $\downarrow$} & \textbf{Peak RAM $\downarrow$} & \textbf{Energy $\downarrow$} \\
+\midrule
+MobileNetV3-Large  & [acc]{mobilenet_v3.accuracy} & [flops]{mobilenet_v3.flops} & [latency]{mobilenet_v3.latency} & [memory]{mobilenet_v3.memory} & [energy]{mobilenet_v3.energy} \\
+EfficientNet-Lite0 & [acc]{effnet_lite0.accuracy} & [flops]{effnet_lite0.flops} & [latency]{effnet_lite0.latency} & [memory]{effnet_lite0.memory} & [energy]{effnet_lite0.energy} \\
+ShuffleNetV2-1.5x  & [acc]{shufflenet_v2.accuracy} & [flops]{shufflenet_v2.flops} & [latency]{shufflenet_v2.latency} & [memory]{shufflenet_v2.memory} & [energy]{shufflenet_v2.energy} \\
+GhostNetV2-1.3x    & [acc]{ghostnet_v2.accuracy}   & [flops]{ghostnet_v2.flops}   & [latency]{ghostnet_v2.latency}   & [memory]{ghostnet_v2.memory}   & [energy]{ghostnet_v2.energy} \\
+EdgeNeXt-Small     & [acc]{edgenext_s.accuracy}    & [flops]{edgenext_s.flops}    & [latency]{edgenext_s.latency}    & [memory]{edgenext_s.memory}    & [energy]{edgenext_s.energy} \\
+\bottomrule
+\end{tabular}
+\end{threeparttable}
+\end{table}

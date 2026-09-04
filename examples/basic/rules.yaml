@@ -1,8 +1,5 @@
 # Group rules configuration for LaTeX table generator
 groups:
-  # ==========================================================
-  # Supervised Models Groups
-  # ==========================================================
   params:
     higher_is_better: false
     bold: 1

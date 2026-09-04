@@ -1,0 +1,22 @@
+\begin{table}[htbp]
+\centering
+\begin{threeparttable}
+\caption{
+Natural language understanding benchmark results on GLUE tasks (reported as mean $\pm$ SEM over 5 seeds).
+Best results are \textbf{bold}, second best are \underline{underlined}.
+The top overall average model is highlighted in light gray.
+}
+\label{tab:glue_benchmark}
+\begin{tabular}{lcccccc}
+\toprule
+\textbf{Model} & \textbf{MNLI} & \textbf{QNLI} & \textbf{SST-2} & \textbf{CoLA} & \textbf{Average} & \textbf{Latency} \\
+\midrule
+BERT-Base        & [mnli]{bert.mnli_mean +- bert.mnli_std}                   & [qnli]{bert.qnli_mean +- bert.qnli_std}                   & [sst2]{bert.sst2_mean +- bert.sst2_std}                   & [cola]{bert.cola_mean +- bert.cola_std}                   & [avg]{bert.avg_mean +- bert.avg_std}                   & [latency]{bert.latency} \\
+RoBERTa-Base     & [mnli]{roberta.mnli_mean +- roberta.mnli_std}             & [qnli]{roberta.qnli_mean +- roberta.qnli_std}             & [sst2]{roberta.sst2_mean +- roberta.sst2_std}             & [cola]{roberta.cola_mean +- roberta.cola_std}             & [avg]{roberta.avg_mean +- roberta.avg_std}             & [latency]{roberta.latency} \\
+ELECTRA-Base     & [mnli]{electra.mnli_mean +- electra.mnli_std}             & [qnli]{electra.qnli_mean +- electra.qnli_std}             & [sst2]{electra.sst2_mean +- electra.sst2_std}             & [cola]{electra.cola_mean +- electra.cola_std}             & [avg]{electra.avg_mean +- electra.avg_std}             & [latency]{electra.latency} \\
+DeBERTa-v3       & [mnli]{deberta.mnli_mean +- deberta.mnli_std}             & [qnli]{deberta.qnli_mean +- deberta.qnli_std}             & [sst2]{deberta.sst2_mean +- deberta.sst2_std}             & [cola]{deberta.cola_mean +- deberta.cola_std}             & [avg]{deberta.avg_mean +- deberta.avg_std}             & [latency]{deberta.latency} \\
+LLaMA-1B-Distill & [mnli]{llama_distill.mnli_mean +- llama_distill.mnli_std} & [qnli]{llama_distill.qnli_mean +- llama_distill.qnli_std} & [sst2]{llama_distill.sst2_mean +- llama_distill.sst2_std} & [cola]{llama_distill.cola_mean +- llama_distill.cola_std} & [avg]{llama_distill.avg_mean +- llama_distill.avg_std} & [latency]{llama_distill.latency} \\
+\bottomrule
+\end{tabular}
+\end{threeparttable}
+\end{table}
