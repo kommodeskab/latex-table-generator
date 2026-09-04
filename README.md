@@ -2,6 +2,10 @@
 
 A lightweight, flexible Python package to automatically generate publication-ready LaTeX tables from `.csv` metric files, custom `.txt` template files, and reusable `.yaml` rule files.
 
+<p align="center">
+  <img src="examples/table_output.png" alt="Example LaTeX Table Output" width="100%"/>
+</p>
+
 ---
 
 ## Features
@@ -147,6 +151,12 @@ ViT-Base                  & \textcolor{blue}{0.87 \ensuremath{\pm} 0.01}        
 \bottomrule
 \end{tabular}
 \end{table}
+```
+
+### 5. Compiled Visual Preview
+
+![Example LaTeX Table Output](examples/table_output.png)
+
 ---
 
 ## WandB Integration
