@@ -931,3 +931,106 @@ def test_standard_error_of_mean_invalid_values():
 
     with pytest.raises(ValueError, match="positive integer"):
         GroupRule.from_dict("test", {"standard_error_of_mean": "abc"})
+
+
+def test_rule_copy_string_alias():
+    """Verify that a group can be defined as a string alias pointing to another group."""
+    rules = RulesConfig.from_dict(
+        {
+            "groups": {
+                "s_params": {
+                    "higher_is_better": False,
+                    "bold": 1,
+                    "si_prefix": True,
+                    "decimals": 1,
+                },
+                "us_params": "s_params",
+            }
+        }
+    )
+
+    s_rule = rules.get_rule("s_params")
+    us_rule = rules.get_rule("us_params")
+
+    assert us_rule.name == "us_params"
+    assert us_rule.higher_is_better == s_rule.higher_is_better
+    assert us_rule.bold == s_rule.bold
+    assert us_rule.auto_scale == s_rule.auto_scale
+    assert us_rule.decimals == s_rule.decimals
+
+
+def test_rule_copy_with_overrides():
+    """Verify that copy_from / copy / inherits allows overriding specific settings."""
+    rules = RulesConfig.from_dict(
+        {
+            "groups": {
+                "base_metric": {
+                    "higher_is_better": True,
+                    "bold": 1,
+                    "underline": 2,
+                    "decimals": 2,
+                    "color": "blue",
+                },
+                "derived_metric": {
+                    "copy_from": "base_metric",
+                    "decimals": 4,
+                    "color": "cyan",
+                },
+            }
+        }
+    )
+
+    derived = rules.get_rule("derived_metric")
+    assert derived.name == "derived_metric"
+    assert derived.higher_is_better is True
+    assert derived.bold == [1]
+    assert derived.underline == [2]
+    assert derived.decimals == 4  # Overridden
+    assert derived.color == "cyan"  # Overridden
+
+
+def test_rule_copy_transitive():
+    """Verify chained/transitive rule copying A -> B -> C."""
+    rules = RulesConfig.from_dict(
+        {
+            "groups": {
+                "A": {"decimals": 3, "unit": "ms"},
+                "B": "A",
+                "C": {"copy": "B", "decimals": 1},
+            }
+        }
+    )
+
+    assert rules.get_rule("B").decimals == 3
+    assert rules.get_rule("B").unit == "ms"
+    assert rules.get_rule("C").decimals == 1
+    assert rules.get_rule("C").unit == "ms"
+
+
+def test_rule_copy_circular_detection():
+    """Verify circular copying raises ValueError."""
+    import pytest
+
+    with pytest.raises(ValueError, match="Circular rule copy detected"):
+        RulesConfig.from_dict(
+            {
+                "groups": {
+                    "A": "B",
+                    "B": "A",
+                }
+            }
+        )
+
+
+def test_rule_copy_missing_target():
+    """Verify copying non-existent group raises KeyError."""
+    import pytest
+
+    with pytest.raises(KeyError, match="attempts to copy non-existent group 'ghost'"):
+        RulesConfig.from_dict(
+            {
+                "groups": {
+                    "A": "ghost",
+                }
+            }
+        )

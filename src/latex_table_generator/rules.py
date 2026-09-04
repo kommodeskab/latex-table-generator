@@ -231,19 +231,22 @@ class RulesConfig:
 
     @classmethod
     def from_dict(cls, data: Mapping[str, Any]) -> RulesConfig:
+        import copy
+
         groups: dict[str, GroupRule] = {}
         default_rule: GroupRule | None = None
 
         # Look for "groups" subkey or top-level group mappings
         groups_dict = data.get("groups", data)
+        raw_groups: dict[str, Any] = {}
         if isinstance(groups_dict, Mapping):
             for k, v in groups_dict.items():
                 if k == "default":
                     default_rule = GroupRule.from_dict(
                         "default", v if isinstance(v, Mapping) else None
                     )
-                elif isinstance(v, Mapping):
-                    groups[k] = GroupRule.from_dict(k, v)
+                else:
+                    raw_groups[k] = v
 
         if (
             default_rule is None
@@ -251,6 +254,60 @@ class RulesConfig:
             and isinstance(data["default"], Mapping)
         ):
             default_rule = GroupRule.from_dict("default", data["default"])
+
+        # Resolve group definitions with support for aliases / copying / inheritance
+        resolved_cache: dict[str, dict[str, Any]] = {}
+
+        def _resolve(group_name: str, chain: list[str]) -> dict[str, Any]:
+            if group_name in chain:
+                cycle_path = " -> ".join(chain + [group_name])
+                raise ValueError(f"Circular rule copy detected: {cycle_path}")
+            if group_name in resolved_cache:
+                return resolved_cache[group_name]
+
+            if group_name not in raw_groups:
+                caller = chain[-1] if chain else group_name
+                raise KeyError(
+                    f"Group '{caller}' attempts to copy non-existent group '{group_name}'"
+                )
+
+            raw_val = raw_groups[group_name]
+            if raw_val is None:
+                res: dict[str, Any] = {}
+            elif isinstance(raw_val, str):
+                target_name = raw_val.strip()
+                res = copy.deepcopy(_resolve(target_name, chain + [group_name]))
+            elif isinstance(raw_val, Mapping):
+                copy_target = (
+                    raw_val.get("copy_from")
+                    or raw_val.get("copy")
+                    or raw_val.get("inherits")
+                    or raw_val.get("extends")
+                )
+                if copy_target is not None:
+                    target_name = str(copy_target).strip()
+                    base = copy.deepcopy(_resolve(target_name, chain + [group_name]))
+                else:
+                    base = {}
+
+                res = base
+                for k, v in raw_val.items():
+                    if k in ("copy_from", "copy", "inherits", "extends"):
+                        continue
+                    if isinstance(res.get(k), dict) and isinstance(v, Mapping):
+                        res[k] = dict(res[k])
+                        res[k].update(copy.deepcopy(v))
+                    else:
+                        res[k] = copy.deepcopy(v)
+            else:
+                res = {}
+
+            resolved_cache[group_name] = res
+            return res
+
+        for group_name in raw_groups:
+            resolved_dict = _resolve(group_name, [])
+            groups[group_name] = GroupRule.from_dict(group_name, resolved_dict)
 
         return cls(groups=groups, default_rule=default_rule)
 

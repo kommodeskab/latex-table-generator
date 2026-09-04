@@ -268,6 +268,7 @@ default:                           # Global fallback options applied to all ungr
 | `styles` | `list[str]` or `str` | `[]` | Static styles applied unconditionally to all cells in the group (e.g., `["italic"]`). |
 | `custom_format` | `str` | `None` | Custom Python format string (e.g., `"{:.2f}%"`). |
 | `align_numbers` | `bool` | `true` | Automatically aligns decimal points, minus signs, and plus-minus (`\pm`) signs in columns without shifting. Set `false` to opt out. |
+| `copy_from` / `copy` | `str` | `None` | Group name to copy all settings from (can also override specific options). Alternatively, assign target group directly as a string (e.g. `us_params: "s_params"`). |
 
 #### Rank Indexing & Direction
 
@@ -290,6 +291,32 @@ Cells can belong to multiple groups simultaneously using comma-separated tags (e
   - `decimals`, `scale`, `unit`, `auto_scale` / `si_prefix`, `standard_error_of_mean`: First group in the tag with the setting defined wins.
   - `color` / `cell_color`: Dynamic rank colors take precedence over static colors. When choosing among static colors, the first group in the tag with a color defined wins.
   - `align_numbers`: Opt-out precedence — if *any* assigned group specifies `align_numbers: false`, alignment is disabled for that cell.
+
+#### Copying & Inheriting Rules
+
+To avoid repeating configuration across related groups (such as supervised vs. unsupervised versions of the same metric), you can copy rules:
+
+1. **Direct alias / copy (string)**:
+   ```yaml
+   groups:
+     s_params:
+       higher_is_better: false
+       bold: 1
+       si_prefix: true
+       decimals: 1
+
+     # us_params gets the exact same rules as s_params, evaluated independently
+     us_params: "s_params"
+   ```
+
+2. **Copy with overrides (`copy_from`, `copy`, `inherits`, or `extends`)**:
+   ```yaml
+   groups:
+     us_acc:
+       copy_from: "s_acc"
+       decimals: 3          # Overrides s_acc's decimals
+       color: "cyan"        # Overrides s_acc's color
+   ```
 
 ---
 
