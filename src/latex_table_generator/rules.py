@@ -29,6 +29,12 @@ class GroupRule:
     custom_format: str | None = None
     align_numbers: bool | None = None
     standard_error_of_mean: int | None = None
+    color_gradient: bool = False
+    colormap: str | list[str] | None = None
+    gradient_target: str = "cell"
+    vmin: float | None = None
+    vmax: float | None = None
+    gradient_text_contrast: bool = True
 
     @classmethod
     def from_dict(cls, name: str, data: Mapping[str, Any] | None) -> GroupRule:
@@ -197,6 +203,60 @@ class GroupRule:
                     f"Invalid standard_error_of_mean value: {sem_raw}. Must be a positive integer."
                 ) from e
 
+        # Parse color_gradient and colormap options
+        color_gradient_raw = data.get("color_gradient")
+        if color_gradient_raw is None:
+            color_gradient_raw = data.get("gradient")
+
+        colormap_raw = data.get("colormap")
+        if colormap_raw is None:
+            colormap_raw = data.get("cmap")
+
+        color_gradient: bool = False
+        colormap: str | list[str] | None = None
+
+        if colormap_raw is not None:
+            if isinstance(colormap_raw, str):
+                colormap = colormap_raw.strip()
+            elif isinstance(colormap_raw, (list, tuple)):
+                colormap = [str(c).strip() for c in colormap_raw]
+
+        if color_gradient_raw is not None:
+            if isinstance(color_gradient_raw, str):
+                s = color_gradient_raw.strip().lower()
+                if s in ("true", "1", "yes", "on"):
+                    color_gradient = True
+                elif s in ("false", "0", "no", "off"):
+                    color_gradient = False
+                else:
+                    # e.g., color_gradient: "Blues"
+                    color_gradient = True
+                    if colormap is None:
+                        colormap = color_gradient_raw.strip()
+            else:
+                color_gradient = bool(color_gradient_raw)
+        elif colormap is not None:
+            # Specifying a colormap implicitly enables color_gradient
+            color_gradient = True
+
+        if color_gradient and not colormap:
+            raise ValueError(
+                f"Group '{name}' has color_gradient enabled, but no colormap was specified. "
+                "Please specify a 'colormap' (e.g. colormap: 'Blues' or colormap: 'viridis')."
+            )
+
+        vmin_raw = data.get("vmin") if "vmin" in data else data.get("gradient_min")
+        vmin = float(vmin_raw) if vmin_raw is not None else None
+
+        vmax_raw = data.get("vmax") if "vmax" in data else data.get("gradient_max")
+        vmax = float(vmax_raw) if vmax_raw is not None else None
+
+        gradient_target = str(data.get("gradient_target") or "cell").strip().lower()
+        contrast_raw = data.get("gradient_text_contrast")
+        gradient_text_contrast = (
+            bool(contrast_raw) if contrast_raw is not None else True
+        )
+
         return cls(
             name=name,
             higher_is_better=higher_is_better,
@@ -215,6 +275,12 @@ class GroupRule:
             custom_format=custom_format,
             align_numbers=align_numbers,
             standard_error_of_mean=standard_error_of_mean,
+            color_gradient=color_gradient,
+            colormap=colormap,
+            gradient_target=gradient_target,
+            vmin=vmin,
+            vmax=vmax,
+            gradient_text_contrast=gradient_text_contrast,
         )
 
 

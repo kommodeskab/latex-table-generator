@@ -386,6 +386,83 @@ class TemplateRenderer:
             return round(scaled_val, decimals)
         return scaled_val
 
+    def _evaluate_group_gradients(self, items: list[_ItemMatch]) -> None:
+        """Calculate color gradients (heatmaps) across items in each group based on metric values."""
+        from latex_table_generator.colormaps import get_colormap_hex
+
+        group_items_map: dict[str, list[_ItemMatch]] = {}
+        for item in items:
+            for g in item.groups:
+                if g not in group_items_map:
+                    group_items_map[g] = []
+                group_items_map[g].append(item)
+
+        for group_name, g_items in group_items_map.items():
+            rule = self.rules.get_rule(group_name)
+            eff_color_gradient = (
+                rule.color_gradient or self.rules.default_rule.color_gradient
+            )
+            eff_colormap = rule.colormap or self.rules.default_rule.colormap
+            if not eff_color_gradient or not eff_colormap:
+                continue
+
+            valid_numeric_items = [
+                it
+                for it in g_items
+                if it.numeric_val is not None
+                and isinstance(it.numeric_val, (int, float))
+                and not math.isnan(it.numeric_val)
+            ]
+            if not valid_numeric_items:
+                continue
+
+            raw_vals = [float(it.numeric_val) for it in valid_numeric_items]
+            min_val = (
+                float(rule.vmin)
+                if rule.vmin is not None
+                else (
+                    float(self.rules.default_rule.vmin)
+                    if self.rules.default_rule.vmin is not None
+                    else min(raw_vals)
+                )
+            )
+            max_val = (
+                float(rule.vmax)
+                if rule.vmax is not None
+                else (
+                    float(self.rules.default_rule.vmax)
+                    if self.rules.default_rule.vmax is not None
+                    else max(raw_vals)
+                )
+            )
+
+            val_range = max_val - min_val
+
+            for it in valid_numeric_items:
+                v = float(it.numeric_val)
+                if abs(val_range) < 1e-12:
+                    t = 0.5
+                else:
+                    t = (v - min_val) / val_range
+                t = max(0.0, min(1.0, t))
+
+                try:
+                    hex_color, is_dark = get_colormap_hex(eff_colormap, t)
+                except Exception:
+                    continue
+
+                if rule.gradient_target == "text":
+                    it.assigned_color = hex_color
+                else:
+                    it.assigned_cell_color = hex_color
+                    if (
+                        rule.gradient_text_contrast
+                        and is_dark
+                        and not it.assigned_color
+                        and not rule.color
+                    ):
+                        it.assigned_color = "white"
+
     def _evaluate_group_extremums(self, items: list[_ItemMatch]) -> None:
         """Calculate ranked highlights (bold, underline, colors) for each group based on rounded values."""
         group_items_map: dict[str, list[_ItemMatch]] = {}
@@ -819,6 +896,9 @@ class TemplateRenderer:
         """Render a template string into a LaTeX table applying metric values and group rules."""
         items = self._collect_items(template_str)
 
+        # Calculate color gradients per group based on metric values
+        self._evaluate_group_gradients(items)
+
         # Calculate extremums (highest/lowest) per group
         self._evaluate_group_extremums(items)
 
@@ -836,6 +916,7 @@ class TemplateRenderer:
         if "{" in rendered and "." in rendered:
             remaining_items = self._collect_items(rendered)
             if remaining_items:
+                self._evaluate_group_gradients(remaining_items)
                 self._evaluate_group_extremums(remaining_items)
                 self._evaluate_column_alignment(remaining_items)
                 for item in sorted(

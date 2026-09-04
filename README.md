@@ -253,6 +253,14 @@ groups:
     align_numbers: true            # Align minus signs, decimal points, and +- signs (default: true)
     standard_error_of_mean: 10     # Positive int (sample size N): normalizes std to SEM = std / sqrt(N)
 
+    # Color gradient (heatmap): colors each cell according to its metric value
+    color_gradient: true           # Enable gradient mode (must also specify colormap)
+    colormap: "Blues"              # Colormap: "Blues", "viridis", "RdYlGn", "coolwarm", etc., or color list
+    # vmin: 0.0                    # Optional lower bound (defaults to group min)
+    # vmax: 1.0                    # Optional upper bound (defaults to group max)
+    # gradient_target: "cell"      # Target to color: "cell" (default) or "text"
+    # gradient_text_contrast: true # Automatically use white text on dark cells (default: true)
+
 default:                           # Global fallback options applied to all ungrouped/grouped cells
   decimals: 2
   align_numbers: true
@@ -271,6 +279,11 @@ default:                           # Global fallback options applied to all ungr
 | `scale` | `float` | `None` | Multiplier applied to values before formatting (e.g., `100` converts `0.85` to `85.0`). |
 | `unit` | `str` | `None` | Unit suffix appended after the number and any uncertainty (e.g. `dB`, `ms`, `%`). |
 | `standard_error_of_mean` | `int` | `None` | Number of samples $N > 0$ used to compute the standard deviation. Normalizes uncertainty to standard error of the mean ($\text{SEM} = s / \sqrt{N}$). Can be empty/omitted for raw standard deviation. |
+| `color_gradient` | `bool` | `false` | Enables color gradient (heatmap) coloring cells according to their metric value. When enabled, `colormap` must also be specified. |
+| `colormap` / `cmap` | `str` or `list[str]` | `None` | Colormap to use (e.g., `"Blues"`, `"viridis"`, `"RdYlGn"`, `"coolwarm"`, etc., append `_r` to reverse), or a custom list of colors like `["white", "#08519C"]`. |
+| `vmin` / `vmax` | `float` | `None` | Optional lower/upper bounds for gradient normalization. Defaults to the minimum and maximum values in the group. |
+| `gradient_target` | `str` | `"cell"` | What gets colored by the gradient: `"cell"` (background via `\cellcolor`) or `"text"` (via `\textcolor`). |
+| `gradient_text_contrast` | `bool` | `true` | Automatically adjusts text color to white on dark background cells to maintain high contrast. |
 | `cell_color` / `cell_color_ranks` | `str` or `dict[int, str]` | `None` | Cell background color using LaTeX `\cellcolor`. Can be a static color name/hex (e.g. `"yellow!25"`, `"#E8F5E9"`) or a rank dictionary mapping rank integers to colors (e.g. `{1: "green!15", -1: "red!15"}`). |
 | `cell_color_<N>` | `str` | `None` | Shortcut to assign background color for rank `N` (e.g. `cell_color_1: "green!15"`, `cell_color_2: "yellow!15"`). |
 | `color` / `color_ranks` | `str` or `dict[int, str]` | `None` | Text color. Can be a static color name/hex (e.g. `"blue"`, `"#336699"`) or a rank dictionary mapping rank integers to colors (e.g. `{1: "ForestGreen", -1: "red"}`). |
@@ -327,6 +340,29 @@ To avoid repeating configuration across related groups (such as supervised vs. u
        decimals: 3          # Overrides s_acc's decimals
        color: "cyan"        # Overrides s_acc's color
    ```
+
+#### Color Gradients & Colormaps
+
+Enable continuous heatmaps / gradients across table cells based on their numeric values:
+
+```yaml
+groups:
+  accuracy:
+    color_gradient: true
+    colormap: "Blues"              # Required when color_gradient is true
+    # vmin: 0.0                    # Optional: custom lower bound (default: column minimum)
+    # vmax: 1.0                    # Optional: custom upper bound (default: column maximum)
+```
+
+- **Colormap requirement**: When `color_gradient: true` is enabled, a `colormap` **must** be specified (e.g., `colormap: "Blues"`). Specifying a `colormap` also enables `color_gradient` automatically.
+- **Built-in Colormaps**:
+  - **Sequential**: `Blues`, `Greens`, `Reds`, `Purples`, `Oranges`, `Greys`, `YlGn`, `YlOrRd`, `BuGn`, `PuBu`
+  - **Perceptually Uniform**: `viridis`, `plasma`, `inferno`, `magma`, `cividis`
+  - **Diverging**: `coolwarm`, `RdYlGn`, `RdYlBu`, `bwr`, `seismic`, `Spectral`, `PiYG`, `PRGn`
+  - **Reversed**: Append `_r` to any colormap name (e.g. `Blues_r`, `viridis_r`, `RdYlGn_r`).
+  - **Custom Color Gradients**: Provide a list of colors (e.g. `colormap: ["white", "#1f77b4"]` or `colormap: ["#d73027", "#ffffbf", "#1a9850"]`).
+- **Automatic Text Contrast**: Cells with dark background colors automatically switch their text color to `white` to preserve high readability and contrast (can be disabled with `gradient_text_contrast: false`).
+- **Target**: Set `gradient_target: "cell"` (default cell background via `\cellcolor`) or `gradient_target: "text"` (text color via `\textcolor`).
 
 ---
 
