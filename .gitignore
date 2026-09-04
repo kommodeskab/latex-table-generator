@@ -14,3 +14,7 @@ wheels/
 
 # WandB Cache
 .wandb_cache/
+
+# Rendered HTML docs / Quarto preview artifacts
+*.html
+*_files/

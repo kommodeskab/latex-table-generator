@@ -3,7 +3,8 @@
 \begin{threeparttable}
 \caption{
 Robustness benchmark under ImageNet-C corruptions.
-Accuracy columns (Clean, Noise, Blur, Weather) are shaded with a continuous \textit{Blues} heatmap ($40.0\% - 85.0\%$).
+Accuracy columns (Clean, Noise, Blur, Weather) are shaded with independent per-column \textit{Blues} heatmaps.
+Arrows indicate direction of improvement ($\uparrow$ higher is better, $\downarrow$ lower is better).
 Lowest Mean Corruption Error (mCE $\downarrow$) is \textbf{bold}, second lowest is \underline{underlined}.
 }
 \label{tab:robustness_heatmap}
@@ -11,11 +12,11 @@ Lowest Mean Corruption Error (mCE $\downarrow$) is \textbf{bold}, second lowest 
 \toprule
 \textbf{Model} & \textbf{Params $\downarrow$} & \textbf{Clean (\%) $\uparrow$} & \textbf{Noise (\%) $\uparrow$} & \textbf{Blur (\%) $\uparrow$} & \textbf{Weather (\%) $\uparrow$} & \textbf{mCE $\downarrow$} \\
 \midrule
-ResNet-50       & [params]{resnet50.params}   & [corruption]{resnet50.clean}   & [corruption]{resnet50.noise}   & [corruption]{resnet50.blur}   & [corruption]{resnet50.weather}   & [mce]{resnet50.mce} \\
-ConvNeXt-T      & [params]{convnext_t.params} & [corruption]{convnext_t.clean} & [corruption]{convnext_t.noise} & [corruption]{convnext_t.blur} & [corruption]{convnext_t.weather} & [mce]{convnext_t.mce} \\
-DeiT-S          & [params]{deit_s.params}     & [corruption]{deit_s.clean}     & [corruption]{deit_s.noise}     & [corruption]{deit_s.blur}     & [corruption]{deit_s.weather}     & [mce]{deit_s.mce} \\
-Swin-T          & [params]{swin_t.params}     & [corruption]{swin_t.clean}     & [corruption]{swin_t.noise}     & [corruption]{swin_t.blur}     & [corruption]{swin_t.weather}     & [mce]{swin_t.mce} \\
-EfficientNet-B3 & [params]{effnet_b3.params}  & [corruption]{effnet_b3.clean}  & [corruption]{effnet_b3.noise}  & [corruption]{effnet_b3.blur}  & [corruption]{effnet_b3.weather}  & [mce]{effnet_b3.mce} \\
+ResNet-50       & [params]{resnet50.params}   & [clean]{resnet50.clean}   & [noise]{resnet50.noise}   & [blur]{resnet50.blur}   & [weather]{resnet50.weather}   & [mce]{resnet50.mce} \\
+ConvNeXt-T      & [params]{convnext_t.params} & [clean]{convnext_t.clean} & [noise]{convnext_t.noise} & [blur]{convnext_t.blur} & [weather]{convnext_t.weather} & [mce]{convnext_t.mce} \\
+DeiT-S          & [params]{deit_s.params}     & [clean]{deit_s.clean}     & [noise]{deit_s.noise}     & [blur]{deit_s.blur}     & [weather]{deit_s.weather}     & [mce]{deit_s.mce} \\
+Swin-T          & [params]{swin_t.params}     & [clean]{swin_t.clean}     & [noise]{swin_t.noise}     & [blur]{swin_t.blur}     & [weather]{swin_t.weather}     & [mce]{swin_t.mce} \\
+EfficientNet-B3 & [params]{effnet_b3.params}  & [clean]{effnet_b3.clean}  & [noise]{effnet_b3.noise}  & [blur]{effnet_b3.blur}  & [weather]{effnet_b3.weather}  & [mce]{effnet_b3.mce} \\
 \bottomrule
 \end{tabular}
 \end{threeparttable}

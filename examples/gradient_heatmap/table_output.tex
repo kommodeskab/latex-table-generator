@@ -3,19 +3,20 @@
 \begin{threeparttable}
 \caption{
 Robustness benchmark under ImageNet-C corruptions.
-Accuracy columns (Clean, Noise, Blur, Weather) are shaded with a continuous \textit{Blues} heatmap ($40.0\% - 85.0\%$).
+Accuracy columns (Clean, Noise, Blur, Weather) are shaded with independent per-column \textit{Blues} heatmaps.
+Arrows indicate direction of improvement ($\uparrow$ higher is better, $\downarrow$ lower is better).
 Lowest Mean Corruption Error (mCE $\downarrow$) is \textbf{bold}, second lowest is \underline{underlined}.
 }
 \label{tab:robustness_heatmap}
 \begin{tabular}{lcccccc}
 \toprule
-\textbf{Model}  & \textbf{Params $\downarrow$}                                   & \textbf{Clean (\%) $\uparrow$}                  & \textbf{Noise (\%) $\uparrow$} & \textbf{Blur (\%) $\uparrow$} & \textbf{Weather (\%) $\uparrow$} & \textbf{mCE $\downarrow$} \\
+\textbf{Model}  & \textbf{Params $\downarrow$}                                   & \textbf{Clean (\%) $\uparrow$}                  & \textbf{Noise (\%) $\uparrow$}                  & \textbf{Blur (\%) $\uparrow$}                   & \textbf{Weather (\%) $\uparrow$}                & \textbf{mCE $\downarrow$} \\
 \midrule
-ResNet-50       & 25.6M                                                          & \cellcolor[HTML]{3081BD}76.1                    & \cellcolor[HTML]{F1F7FD}42.1   & \cellcolor[HTML]{E0ECF8}48.4  & \cellcolor[HTML]{D0E2F2}54.2     & 76.8 \\
-ConvNeXt-T      & 28.6M                                                          & \cellcolor[HTML]{1561A7}\textcolor{white}{82.1} & \cellcolor[HTML]{CDE0F1}55.4   & \cellcolor[HTML]{B1D0E9}60.1  & \cellcolor[HTML]{6DAFD6}66.8     & \underline{62.4} \\
-DeiT-S          & 22.1M                                                          & \cellcolor[HTML]{1F6DAF}\textcolor{white}{79.8} & \cellcolor[HTML]{D8E7F5}51.2   & \cellcolor[HTML]{CFE1F2}54.6  & \cellcolor[HTML]{A5CBE6}61.3     & 69.1 \\
-Swin-T          & 28.3M                                                          & \cellcolor[HTML]{1966AA}\textcolor{white}{81.2} & \cellcolor[HTML]{C7DBEF}57.8   & \cellcolor[HTML]{9AC5E3}62.4  & \cellcolor[HTML]{64A9D3}68.1     & \phantom{59}\llap{\textbf{59}}\rlap{\textbf{.8}}\phantom{.8} \\
-EfficientNet-B3 & \phantom{12}\llap{\textbf{12}}\rlap{\textbf{.2M}}\phantom{.2M} & \cellcolor[HTML]{1764A8}\textcolor{white}{81.6} & \cellcolor[HTML]{D5E5F4}52.3   & \cellcolor[HTML]{C7DBEF}57.8  & \cellcolor[HTML]{8FC0E0}63.4     & 65.2 \\
+ResNet-50       & 25.6M                                                          & \cellcolor[HTML]{F7FBFF}76.1                    & \cellcolor[HTML]{F7FBFF}42.1                    & \cellcolor[HTML]{F7FBFF}48.4                    & \cellcolor[HTML]{F7FBFF}54.2                    & 76.8 \\
+ConvNeXt-T      & 28.6M                                                          & \cellcolor[HTML]{08519C}\textcolor{white}{82.1} & \cellcolor[HTML]{2776B5}\textcolor{white}{55.4} & \cellcolor[HTML]{2979B7}\textcolor{white}{60.1} & \cellcolor[HTML]{1A67AB}\textcolor{white}{66.8} & \underline{62.4} \\
+DeiT-S          & 22.1M                                                          & \cellcolor[HTML]{64A9D3}79.8                    & \cellcolor[HTML]{74B3D9}51.2                    & \cellcolor[HTML]{B2D1E9}54.6                    & \cellcolor[HTML]{94C2E1}61.3                    & 69.1 \\
+Swin-T          & 28.3M                                                          & \cellcolor[HTML]{2776B5}\textcolor{white}{81.2} & \cellcolor[HTML]{08519C}\textcolor{white}{57.8} & \cellcolor[HTML]{08519C}\textcolor{white}{62.4} & \cellcolor[HTML]{08519C}\textcolor{white}{68.1} & \phantom{59}\llap{\textbf{59}}\rlap{\textbf{.8}}\phantom{.8} \\
+EfficientNet-B3 & \phantom{12}\llap{\textbf{12}}\rlap{\textbf{.2M}}\phantom{.2M} & \cellcolor[HTML]{1966AA}\textcolor{white}{81.6} & \cellcolor[HTML]{5DA3D0}52.3                    & \cellcolor[HTML]{569ECD}57.8                    & \cellcolor[HTML]{59A0CE}63.4                    & 65.2 \\
 \bottomrule
 \end{tabular}
 \end{threeparttable}

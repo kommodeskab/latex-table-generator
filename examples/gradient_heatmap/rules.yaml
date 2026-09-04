@@ -1,4 +1,4 @@
-# Rule configuration showcasing color gradients (heatmaps) across corruption benchmarks
+# Rule configuration showcasing per-column color gradients (heatmaps) across corruption benchmarks
 groups:
   params:
     higher_is_better: false
@@ -6,15 +6,19 @@ groups:
     si_prefix: true
     decimals: 1
 
-  corruption:
+  base_gradient:
     higher_is_better: true
     decimals: 1
     color_gradient: true
     colormap: "Blues"
-    vmin: 40.0
-    vmax: 85.0
     gradient_target: "cell"
     gradient_text_contrast: true
+
+  # Each column has an independent gradient normalized to that column's min and max
+  clean: "base_gradient"
+  noise: "base_gradient"
+  blur: "base_gradient"
+  weather: "base_gradient"
 
   mce:
     higher_is_better: false
