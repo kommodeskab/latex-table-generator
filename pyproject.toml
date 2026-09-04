@@ -5,6 +5,7 @@ description = "Generate customizable LaTeX tables from CSV metrics and template 
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
+    "matplotlib>=3.10.9",
     "python-dotenv>=1.2.3",
     "pyyaml>=6.0.3",
     "tqdm>=4.70.0",

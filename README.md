@@ -42,73 +42,103 @@ uv pip install .
 
 ## Quickstart
 
-### 1. Metrics File (`metrics.csv`)
+### 1. Metrics File (`examples/metrics.csv`)
 
+<!-- START:examples/metrics.csv -->
 ```csv
-model,acc_mean,acc_std,f1_mean,f1_std,latency
-res18,0.7645,0.0123,0.7512,0.0145,12.4
-res50,0.8123,0.0098,0.8045,0.0112,24.8
-vit,0.8654,0.0067,0.8591,0.0078,45.2
-swin,0.8812,0.0054,0.8765,0.0061,52.1
+model,acc_mean,acc_std,f1_mean,f1_std,latency,params
+s_res18,0.6975,0.0085,0.6920,0.0088,12.4,11689512
+s_res50,0.7615,0.0072,0.7580,0.0075,24.8,25557032
+s_vit,0.8180,0.0065,0.8145,0.0068,45.2,86567656
+s_swin,0.8350,0.0058,0.8310,0.0060,52.1,87985448
+us_res18,0.6350,0.0112,0.6285,0.0115,12.4,11689512
+us_res50,0.7120,0.0095,0.7075,0.0098,24.8,25557032
+us_vit,0.7745,0.0082,0.7710,0.0085,45.2,86567656
+us_swin,0.7980,0.0076,0.7940,0.0078,52.1,87985448
 ```
+<!-- END:examples/metrics.csv -->
 
-### 2. Group Rules Configuration (`rules.yaml`)
+### 2. Group Rules Configuration (`examples/rules.yaml`)
 
 Define reusable formatting rules for each group:
 
+<!-- START:examples/rules.yaml -->
 ```yaml
+# Group rules configuration for LaTeX table generator
 groups:
-  # Accuracy column: higher is better, rank 1 is bold, rank 2 is underlined, blue color
-  accuracy:
+  # ==========================================================
+  # Supervised Models Groups
+  # ==========================================================
+  params:
+    higher_is_better: false
+    bold: 1
+    si_prefix: true
+    decimals: 1
+
+  high_metric:
     higher_is_better: true
     bold: 1
     underline: 2
     decimals: 2
-    color: "blue"
 
-  # F1 column: higher is better, rank 1 is bold, navy color
-  f1:
-    higher_is_better: true
-    bold: 1
-    decimals: 2
-    color: "NavyBlue"
-
-  # Latency column: lower is better (faster is better!), rank 1 is bold
-  latency:
+  low_metric:
+    copy_from: high_metric
     higher_is_better: false
-    bold: 1
-    decimals: 1
-    color: "darkgray"
 
-  # Special tag that can be added to any cell
-  top_performer:
-    color: "ForestGreen"
+  s_params: "params"
+  s_acc: "high_metric"
+  s_top5: "high_metric"
+  s_f1: "high_metric"
+  s_latency: "low_metric"
+
+  us_params: "params"
+  us_acc: "high_metric"
+  us_top5: "high_metric"
+  us_f1: "high_metric"
+  us_latency: "low_metric"
 
 default:
   decimals: 2
 ```
+<!-- END:examples/rules.yaml -->
 
-### 3. Table Template (`template.txt`)
+### 3. Table Template (`examples/template.tex`)
 
 Assign cells to groups using `[group_name]{...}` or `{... | group_name}`:
 
+<!-- START:examples/template.tex -->
 ```latex
 \begin{table}[htbp]
 \centering
-\caption{Classification performance comparison.}
+\begin{threeparttable}
+\caption{
+Classification performance comparison of supervised and unsupervised models.
+Best model is \textbf{bold}, second best is \underline{underlined}.
+}
 \label{tab:model_comparison}
-\begin{tabular}{lccc}
+\begin{tabular}{lcccc}
 \toprule
-\textbf{Model} & \textbf{Accuracy} & \textbf{F1-Score} & \textbf{Latency (ms)} \\
+\textbf{Model} & \textbf{Params} & \textbf{Acc} & \textbf{F1-Score} & \textbf{Latency (ms)} \\
 \midrule
-ResNet-18 & [accuracy]{res18.acc_mean +- res18.acc_std} & [f1]{res18.f1_mean +- res18.f1_std} & [latency]{res18.latency} \\
-ResNet-50 & [accuracy]{res50.acc_mean +- res50.acc_std} & [f1]{res50.f1_mean +- res50.f1_std} & [latency]{res50.latency} \\
-ViT-Base & [accuracy]{vit.acc_mean +- vit.acc_std} & [f1]{vit.f1_mean +- vit.f1_std} & [latency]{vit.latency} \\
-\textbf{Swin-Transformer} & [accuracy, top_performer]{swin.acc_mean +- swin.acc_std} & [f1, top_performer]{swin.f1_mean +- swin.f1_std} & [latency]{swin.latency} \\
+\multicolumn{5}{l}{\textit{Supervised}} \\
+\midrule
+ResNet-18        & [s_params]{s_res18.params}   & [s_acc]{s_res18.acc_mean +- s_res18.acc_std}    & [s_f1]{s_res18.f1_mean +- s_res18.f1_std}    & [s_latency]{s_res18.latency} \\
+ResNet-50        & [s_params]{s_res50.params}   & [s_acc]{s_res50.acc_mean +- s_res50.acc_std}    & [s_f1]{s_res50.f1_mean +- s_res50.f1_std}    & [s_latency]{s_res50.latency} \\
+ViT-Base         & [s_params]{s_vit.params}     & [s_acc]{s_vit.acc_mean +- s_vit.acc_std}        & [s_f1]{s_vit.f1_mean +- s_vit.f1_std}        & [s_latency]{s_vit.latency} \\
+Swin-Transformer & [s_params]{s_swin.params}    & [s_acc]{s_swin.acc_mean +- s_swin.acc_std}      & [s_f1]{s_swin.f1_mean +- s_swin.f1_std}      & [s_latency]{s_swin.latency} \\
+\midrule
+\multicolumn{5}{l}{\textit{Unsupervised}} \\
+\midrule
+ResNet-18        & [us_params]{us_res18.params} & [us_acc]{us_res18.acc_mean +- us_res18.acc_std} & [us_f1]{us_res18.f1_mean +- us_res18.f1_std} & [us_latency]{us_res18.latency} \\
+ResNet-50        & [us_params]{us_res50.params} & [us_acc]{us_res50.acc_mean +- us_res50.acc_std} & [us_f1]{us_res50.f1_mean +- us_res50.f1_std} & [us_latency]{us_res50.latency} \\
+ViT-Base         & [us_params]{us_vit.params}   & [us_acc]{us_vit.acc_mean +- us_vit.acc_std}     & [us_f1]{us_vit.f1_mean +- us_vit.f1_std}     & [us_latency]{us_vit.latency} \\
+Swin-Transformer & [us_params]{us_swin.params}  & [us_acc]{us_swin.acc_mean +- us_swin.acc_std}   & [us_f1]{us_swin.f1_mean +- us_swin.f1_std}   & [us_latency]{us_swin.latency} \\
 \bottomrule
 \end{tabular}
+\end{threeparttable}
 \end{table}
 ```
+<!-- END:examples/template.tex -->
 
 ### 4. Generate & Render in Python
 
@@ -117,41 +147,57 @@ from latex_table_generator import compile_table, generate_latex_table
 
 # Generate LaTeX table code
 latex_code = generate_latex_table(
-    csv_path="metrics.csv",
-    template_path="template.txt",
-    rules_path="rules.yaml",
-    output_path="table.tex",
+    csv_path="examples/metrics.csv",
+    template_path="examples/template.tex",
+    rules_path="examples/rules.yaml",
+    output_path="examples/table_output.tex",
     align_columns=True,
 )
 
 # Optional: compile directly to PDF and PNG preview
 compile_table(
-    table_source="table.tex",
-    output_pdf="table.pdf",
-    output_png="table.png",
+    table_source="examples/table_output.tex",
+    output_pdf="examples/table_output.pdf",
+    output_png="examples/table_output.png",
     dpi=300,
 )
 ```
 
-**Generated LaTeX Output:**
+**Generated LaTeX Output (`examples/table_output.tex`):**
 
+<!-- START:examples/table_output.tex -->
 ```latex
 \begin{table}[htbp]
 \centering
-\caption{Classification performance comparison.}
+\begin{threeparttable}
+\caption{
+Classification performance comparison of supervised and unsupervised models.
+Best model is \textbf{bold}, second best is \underline{underlined}.
+}
 \label{tab:model_comparison}
-\begin{tabular}{lccc}
+\begin{tabular}{lcccc}
 \toprule
-\textbf{Model}            & \textbf{Accuracy}                                        & \textbf{F1-Score}                                         & \textbf{Latency (ms)} \\
+\textbf{Model}   & \textbf{Params}                                                & \textbf{Acc}                                                                                                                     & \textbf{F1-Score}                                                                                                                & \textbf{Latency (ms)} \\
 \midrule
-ResNet-18                 & \textcolor{blue}{\underline{0.76 \ensuremath{\pm} 0.01}} & \textcolor{NavyBlue}{0.75 \ensuremath{\pm} 0.01}          & \textcolor{darkgray}{\textbf{12.4}} \\
-ResNet-50                 & \textcolor{blue}{0.81 \ensuremath{\pm} 0.01}             & \textcolor{NavyBlue}{0.80 \ensuremath{\pm} 0.01}          & \textcolor{darkgray}{24.8} \\
-ViT-Base                  & \textcolor{blue}{0.87 \ensuremath{\pm} 0.01}             & \textcolor{NavyBlue}{0.86 \ensuremath{\pm} 0.01}          & \textcolor{darkgray}{45.2} \\
-\textbf{Swin-Transformer} & \textcolor{blue}{\textbf{0.88 \ensuremath{\pm} 0.01}}    & \textcolor{NavyBlue}{\textbf{0.88 \ensuremath{\pm} 0.01}} & \textcolor{darkgray}{52.1} \\
+\multicolumn{5}{l}{\textit{Supervised}} \\
+\midrule
+ResNet-18        & \phantom{11}\llap{\textbf{11}}\rlap{\textbf{.7M}}\phantom{.7M} & 0.70 \ensuremath{\pm} 0.01                                                                                                       & 0.69 \ensuremath{\pm} 0.01                                                                                                       & \phantom{12}\llap{\textbf{12}}\rlap{\textbf{.40}}\phantom{.40} \\
+ResNet-50        & 25.6M                                                          & 0.76 \ensuremath{\pm} 0.01                                                                                                       & 0.76 \ensuremath{\pm} 0.01                                                                                                       & \underline{24.80} \\
+ViT-Base         & 86.6M                                                          & \underline{0.82 \ensuremath{\pm} 0.01}                                                                                           & \underline{0.81 \ensuremath{\pm} 0.01}                                                                                           & 45.20 \\
+Swin-Transformer & 88.0M                                                          & \phantom{0.83}\llap{\textbf{0.83}} \rlap{\textbf{\ensuremath{\pm}}}\phantom{\ensuremath{\pm}} \rlap{\textbf{0.01}}\phantom{0.01} & \phantom{0.83}\llap{\textbf{0.83}} \rlap{\textbf{\ensuremath{\pm}}}\phantom{\ensuremath{\pm}} \rlap{\textbf{0.01}}\phantom{0.01} & 52.10 \\
+\midrule
+\multicolumn{5}{l}{\textit{Unsupervised}} \\
+\midrule
+ResNet-18        & \phantom{11}\llap{\textbf{11}}\rlap{\textbf{.7M}}\phantom{.7M} & 0.64 \ensuremath{\pm} 0.01                                                                                                       & 0.63 \ensuremath{\pm} 0.01                                                                                                       & \phantom{12}\llap{\textbf{12}}\rlap{\textbf{.40}}\phantom{.40} \\
+ResNet-50        & 25.6M                                                          & 0.71 \ensuremath{\pm} 0.01                                                                                                       & 0.71 \ensuremath{\pm} 0.01                                                                                                       & \underline{24.80} \\
+ViT-Base         & 86.6M                                                          & \underline{0.77 \ensuremath{\pm} 0.01}                                                                                           & \underline{0.77 \ensuremath{\pm} 0.01}                                                                                           & 45.20 \\
+Swin-Transformer & 88.0M                                                          & \phantom{0.80}\llap{\textbf{0.80}} \rlap{\textbf{\ensuremath{\pm}}}\phantom{\ensuremath{\pm}} \rlap{\textbf{0.01}}\phantom{0.01} & \phantom{0.79}\llap{\textbf{0.79}} \rlap{\textbf{\ensuremath{\pm}}}\phantom{\ensuremath{\pm}} \rlap{\textbf{0.01}}\phantom{0.01} & 52.10 \\
 \bottomrule
 \end{tabular}
+\end{threeparttable}
 \end{table}
 ```
+<!-- END:examples/table_output.tex -->
 
 ### 5. Compiled Visual Preview
 
@@ -370,10 +416,41 @@ groups:
 
 ```bash
 # Generate LaTeX with rules
-latex-table-generator metrics.csv template.txt -r rules.yaml -o table.tex --align
+latex-table-generator metrics.csv template.tex -r rules.yaml -o table.tex --align
 
 # Generate and compile directly to PDF and PNG preview
-latex-table-generator metrics.csv template.txt -r rules.yaml --pdf table.pdf --png table.png
+latex-table-generator metrics.csv template.tex -r rules.yaml --pdf table.pdf --png table.png
+```
+
+### CLI Arguments
+
+| Argument | Flag | Default | Description |
+| :--- | :--- | :--- | :--- |
+| `csv_path` | Positional | *(required)* | Path to `.csv` file containing metrics. |
+| `template_path` | Positional | *(required)* | Path to template `.tex` or `.txt` file containing table layout. |
+| `--rules` | `-r` | `None` | Path to YAML/JSON rules configuration file defining group rules. |
+| `--decimals` | `-d` | `None` | Default number of decimal places for numeric metrics. |
+| `--output` | `-o` | `None` | Path to output `.tex` file (prints to stdout if omitted). |
+| `--pdf` | | `None` | Path to compile directly to a standalone `.pdf`. |
+| `--png` | | `None` | Path to render directly to a `.png` image preview. |
+| `--align` | | `False` | Neatly aligns `&` column separators in the output LaTeX table. |
+| `--no-align-numbers` | | `False` | Disables automatic decimal/plus-minus digit alignment. |
+| `--pm-symbol` | | `\ensuremath{\pm}` | LaTeX symbol to use for uncertainties. |
+| `--delimiter` | | `,` | CSV delimiter. |
+| `--index-col` | | `0` | Column position or column header name used for model index. |
+
+---
+
+## Synchronizing README Examples
+
+Code snippets in `README.md` can be automatically synchronized with source files in `examples/` using comment markers (`<!-- START:examples/<file> -->` ... `<!-- END:examples/<file> -->`):
+
+```bash
+# Synchronize README with examples/
+uv run python scripts/update_readme_examples.py
+
+# Check if README is up to date (used in CI/pre-commit)
+uv run python scripts/update_readme_examples.py --check
 ```
 
 ---

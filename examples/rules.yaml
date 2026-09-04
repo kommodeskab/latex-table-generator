@@ -16,10 +16,8 @@ groups:
     decimals: 2
 
   low_metric:
+    copy_from: high_metric
     higher_is_better: false
-    bold: 1
-    underline: 2
-    decimals: 2
 
   s_params: "params"
   s_acc: "high_metric"

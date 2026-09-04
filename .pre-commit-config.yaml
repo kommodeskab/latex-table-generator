@@ -25,3 +25,9 @@ repos:
         types: [python]
         pass_filenames: false
         always_run: true
+      - id: sync-readme-examples
+        name: sync-readme-examples
+        entry: uv run python scripts/update_readme_examples.py --check
+        language: system
+        pass_filenames: false
+        always_run: true
