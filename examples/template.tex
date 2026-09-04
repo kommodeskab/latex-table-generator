@@ -2,18 +2,27 @@
 \centering
 \begin{threeparttable}
 \caption{
-Classification performance comparison on benchmark dataset.
+Classification performance comparison of supervised and unsupervised models.
 This is a very long caption to test the wrap-around functionality of the caption in the table environment.
 }
 \label{tab:model_comparison}
 \begin{tabular}{lccccc}
 \toprule
-\textbf{Model} & \textbf{Params} & \textbf{Accuracy} & \textbf{F1-Score} & \textbf{Latency (ms)} & \textbf{SNR (dB)} \\
+\textbf{Model} & \textbf{Params} & \textbf{Top-1 Acc} & \textbf{Top-5 Acc} & \textbf{F1-Score} & \textbf{Latency (ms)} \\
 \midrule
-ResNet-18        & [params]{res18.params} & [accuracy]{res18.acc_mean +- res18.acc_std}              & [f1]{res18.f1_mean +- res18.f1_std}              & [latency]{res18.latency}  & [snr]{res18.snr_mean +- res18.snr_std} \\
-ResNet-50        & [params]{res50.params} & [accuracy]{res50.acc_mean +- res50.acc_std}              & [f1]{res50.f1_mean +- res50.f1_std}              & [latency]{res50.latency}  & [snr]{res50.snr_mean +- res50.snr_std} \\
-ViT-Base         & [params]{vit.params}   & [accuracy]{vit.acc_mean +- vit.acc_std}                  & [f1]{vit.f1_mean +- vit.f1_std}                  & [latency]{vit.latency}    & [snr]{vit.snr_mean +- vit.snr_std} \\
-Swin-Transformer & [params]{swin.params}  & [accuracy, top_performer]{swin.acc_mean +- swin.acc_std} & [f1, top_performer]{swin.f1_mean +- swin.f1_std} & [latency]{swin.latency}   & [snr]{swin.snr_mean +- swin.snr_std} \\
+\multicolumn{6}{l}{\textit{Supervised}} \\
+\midrule
+ResNet-18        & [s_params]{s_res18.params} & [s_acc]{s_res18.acc_mean +- s_res18.acc_std}              & [s_top5]{s_res18.top_5_acc_mean +- s_res18.top_5_acc_std}              & [s_f1]{s_res18.f1_mean +- s_res18.f1_std}              & [s_latency]{s_res18.latency} \\
+ResNet-50        & [s_params]{s_res50.params} & [s_acc]{s_res50.acc_mean +- s_res50.acc_std}              & [s_top5]{s_res50.top_5_acc_mean +- s_res50.top_5_acc_std}              & [s_f1]{s_res50.f1_mean +- s_res50.f1_std}              & [s_latency]{s_res50.latency} \\
+ViT-Base         & [s_params]{s_vit.params}   & [s_acc]{s_vit.acc_mean +- s_vit.acc_std}                  & [s_top5]{s_vit.top_5_acc_mean +- s_vit.top_5_acc_std}                  & [s_f1]{s_vit.f1_mean +- s_vit.f1_std}                  & [s_latency]{s_vit.latency} \\
+Swin-Transformer & [s_params]{s_swin.params}  & [s_acc, top_performer]{s_swin.acc_mean +- s_swin.acc_std} & [s_top5, top_performer]{s_swin.top_5_acc_mean +- s_swin.top_5_acc_std} & [s_f1, top_performer]{s_swin.f1_mean +- s_swin.f1_std} & [s_latency]{s_swin.latency} \\
+\midrule
+\multicolumn{6}{l}{\textit{Unsupervised}} \\
+\midrule
+ResNet-18        & [us_params]{us_res18.params} & [us_acc]{us_res18.acc_mean +- us_res18.acc_std} & [us_top5]{us_res18.top_5_acc_mean +- us_res18.top_5_acc_std} & [us_f1]{us_res18.f1_mean +- us_res18.f1_std} & [us_latency]{us_res18.latency} \\
+ResNet-50        & [us_params]{us_res50.params} & [us_acc]{us_res50.acc_mean +- us_res50.acc_std} & [us_top5]{us_res50.top_5_acc_mean +- us_res50.top_5_acc_std} & [us_f1]{us_res50.f1_mean +- us_res50.f1_std} & [us_latency]{us_res50.latency} \\
+ViT-Base         & [us_params]{us_vit.params}   & [us_acc]{us_vit.acc_mean +- us_vit.acc_std}     & [us_top5]{us_vit.top_5_acc_mean +- us_vit.top_5_acc_std}     & [us_f1]{us_vit.f1_mean +- us_vit.f1_std}     & [us_latency]{us_vit.latency} \\
+Swin-Transformer & [us_params]{us_swin.params}  & [us_acc]{us_swin.acc_mean +- us_swin.acc_std}    & [us_top5]{us_swin.top_5_acc_mean +- us_swin.top_5_acc_std}    & [us_f1]{us_swin.f1_mean +- us_swin.f1_std}    & [us_latency]{us_swin.latency} \\
 \bottomrule
 \end{tabular}
 \end{threeparttable}

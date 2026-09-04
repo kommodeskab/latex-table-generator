@@ -1,17 +1,15 @@
 # Group rules configuration for LaTeX table generator
 groups:
-  # Parameters group: auto-scale with SI prefixes, lower is better (rank 1 = bold)
-  params:
+  # ==========================================================
+  # Supervised Models Groups
+  # ==========================================================
+  s_params:
     higher_is_better: false
     bold: 1
     si_prefix: true
     decimals: 1
 
-  # Accuracy group: higher is better
-  # Rank 1: bold, green background
-  # Rank 2: underlined
-  # Rank 3: italic
-  accuracy:
+  s_acc:
     higher_is_better: true
     bold: 1
     underline: 2
@@ -21,8 +19,16 @@ groups:
     cell_color:
       1: "green!15"
 
-  # F1-Score group: higher is better, rank 1 is bold with navy text and green cell
-  f1:
+  s_top5:
+    higher_is_better: true
+    bold: 1
+    underline: 2
+    decimals: 2
+    color: "teal"
+    cell_color:
+      1: "green!15"
+
+  s_f1:
     higher_is_better: true
     bold: 1
     underline: 2
@@ -31,8 +37,7 @@ groups:
     cell_color:
       1: "green!15"
 
-  # Latency group: lower is better (higher_is_better: false), rank 1 (lowest) is bold with green cell
-  latency:
+  s_latency:
     higher_is_better: false
     bold: 1
     underline: 2
@@ -41,16 +46,55 @@ groups:
     cell_color:
       1: "green!15"
 
-  snr:
+  # ==========================================================
+  # Unsupervised Models Groups
+  # ==========================================================
+  us_params:
+    higher_is_better: false
+    bold: 1
+    si_prefix: true
+    decimals: 1
+
+  us_acc:
+    higher_is_better: true
+    bold: 1
+    underline: 2
+    italic: 3
+    decimals: 2
+    color: "blue"
+    cell_color:
+      1: "green!15"
+
+  us_top5:
     higher_is_better: true
     bold: 1
     underline: 2
     decimals: 2
-    color: "purple"
+    color: "teal"
     cell_color:
       1: "green!15"
 
-  # Example multi-group tag: highlight full cell background in soft yellow
+  us_f1:
+    higher_is_better: true
+    bold: 1
+    underline: 2
+    decimals: 2
+    color: "NavyBlue"
+    cell_color:
+      1: "green!15"
+
+  us_latency:
+    higher_is_better: false
+    bold: 1
+    underline: 2
+    decimals: 1
+    color: "darkgray"
+    cell_color:
+      1: "green!15"
+
+  # ==========================================================
+  # Custom / Multi-group Tags
+  # ==========================================================
   top_performer:
     cell_color: "yellow!25"
     color: "ForestGreen"
