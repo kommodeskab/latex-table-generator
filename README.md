@@ -278,6 +278,19 @@ default:                           # Global fallback options applied to all ungr
   - When `higher_is_better: true`: Highest value is rank `1`, lowest is rank `-1`.
   - When `higher_is_better: false`: Lowest value is rank `1` (e.g. lowest latency), highest is rank `-1` (worst latency).
 
+#### Multiple Groups & Conflict Resolution
+
+Cells can belong to multiple groups simultaneously using comma-separated tags (e.g., `[accuracy, top_performer]{model.acc}` or `{model.acc | accuracy, top_performer}`).
+
+- **Additive Rules (Styles & Rankings)**:
+  - **Rankings**: The cell participates in the ranking of all assigned groups independently. If it earns `bold` in one group and `italic` in another, it receives **both** (`\textbf{\textit{...}}`).
+  - **Static Styles (`styles`)**: Static styles from all assigned groups are combined additively without duplicates.
+- **Single-Value Rules (Left-to-Right Precedence)**:
+  For settings that can only have one value, the **first group** listed in the tag that defines the setting takes precedence:
+  - `decimals`, `scale`, `unit`, `auto_scale` / `si_prefix`, `standard_error_of_mean`: First group in the tag with the setting defined wins.
+  - `color` / `cell_color`: Dynamic rank colors take precedence over static colors. When choosing among static colors, the first group in the tag with a color defined wins.
+  - `align_numbers`: Opt-out precedence — if *any* assigned group specifies `align_numbers: false`, alignment is disabled for that cell.
+
 ---
 
 ## Command-Line Interface (CLI)
