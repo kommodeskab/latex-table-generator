@@ -14,7 +14,6 @@ def generate_latex_table(
     csv_path: str | Path | Mapping[str, Mapping[str, Any]] | MetricsStore | Any,
     template_path: str | Path,
     rules_path: str | Path | RulesConfig | Mapping[str, Any] | None = None,
-    rules: str | Path | RulesConfig | Mapping[str, Any] | None = None,
     decimals: int | None = None,
     output_path: str | Path | None = None,
     pm_symbol: str = r"\ensuremath{\pm}",
@@ -34,8 +33,6 @@ def generate_latex_table(
         Path to the template .txt / .tex file, or template string content.
     rules_path : str, Path, dict, or RulesConfig, optional
         Path to the YAML/JSON rules file containing per-group formatting rules.
-    rules : str, Path, dict, or RulesConfig, optional
-        Alias for rules_path.
     decimals : int, optional
         Default number of decimal places if not specified in group rules.
     output_path : str or Path, optional
@@ -66,8 +63,7 @@ def generate_latex_table(
         csv_path, delimiter=delimiter, index_col=index_col, encoding=encoding
     )
 
-    # Load rules (either from rules_path or rules)
-    effective_rules = load_rules(rules_path if rules_path is not None else rules)
+    effective_rules = load_rules(rules_path)
 
     # Initialize renderer
     renderer = TemplateRenderer(
@@ -99,10 +95,6 @@ def generate_latex_table(
             raise FileNotFoundError(f"Template file not found: {template_path}")
 
     raise TypeError(f"Unsupported template_path type: {type(template_path)}")
-
-
-# Alias for convenience
-generate_table = generate_latex_table
 
 
 class TableGenerator:

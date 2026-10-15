@@ -76,3 +76,17 @@ def test_metrics_store_default_value():
     store = MetricsStore({"ModelA": {"acc": 0.85}})
     assert store.get("ModelA", "recall", default=0.0) == 0.0
     assert store.get("ModelX", "acc", default=None) is None
+
+
+def test_load_metrics_explicit_parameters(tmp_path: Path):
+    csv_file = tmp_path / "custom.csv"
+    csv_file.write_text("model;acc\nM1;0.99\n", encoding="utf-8")
+    store = load_metrics(
+        csv_file, delimiter=";", index_col=0, strip_whitespace=True, encoding="utf-8"
+    )
+    assert store.get("M1", "acc") == 0.99
+
+
+def test_load_metrics_disallow_kwargs():
+    with pytest.raises(TypeError):
+        load_metrics("model,acc\nM1,0.9\n", unknown_arg=True)

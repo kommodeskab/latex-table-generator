@@ -24,7 +24,22 @@ def create_standalone_document(
     extra_packages: Sequence[str] | None = None,
     border: str = "10pt",
 ) -> str:
-    """Wrap table LaTeX snippet in a standalone document that automatically fits tables of any width."""
+    """Wrap table LaTeX snippet in a standalone document that automatically fits tables of any width.
+
+    Parameters
+    ----------
+    table_latex : str
+        LaTeX snippet string containing the table.
+    extra_packages : sequence of str, optional
+        Additional LaTeX package names to include in the preamble.
+    border : str, default "10pt"
+        Border spacing around the standalone document.
+
+    Returns
+    -------
+    str
+        Complete compilable standalone LaTeX document string.
+    """
     packages = [
         "booktabs",
         "amsmath",

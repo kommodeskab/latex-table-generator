@@ -970,7 +970,18 @@ def _find_unescaped_percent(line: str) -> int:
 
 
 def align_latex_table(latex_str: str) -> str:
-    """Align '&' and '\\\\' columns across rows in a LaTeX table for clean formatting."""
+    """Align '&' and '\\\\' columns across rows in a LaTeX table for clean formatting.
+
+    Parameters
+    ----------
+    latex_str : str
+        LaTeX table string to column-align.
+
+    Returns
+    -------
+    str
+        Aligned LaTeX table string with uniform column padding.
+    """
     lines = latex_str.splitlines()
 
     parsed_lines = []

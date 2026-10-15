@@ -298,14 +298,44 @@ def load_metrics(
     source: str | Path | Mapping[str, Mapping[str, Any]] | MetricsStore | Any,
     delimiter: str = ",",
     index_col: int | str = 0,
-    **kwargs,
+    strip_whitespace: bool = True,
+    encoding: str = "utf-8",
 ) -> MetricsStore:
-    """Helper function to load metrics from any supported source."""
+    """Load metrics from a supported source into a MetricsStore.
+
+    Parameters
+    ----------
+    source : str, Path, Mapping, MetricsStore, or DataFrame
+        Source containing metrics data (CSV file path or string, dictionary mapping,
+        MetricsStore instance, or pandas DataFrame).
+    delimiter : str, default ","
+        CSV delimiter when loading from a CSV file or string.
+    index_col : int or str, default 0
+        The column index or column name to use as row keys.
+    strip_whitespace : bool, default True
+        Whether to strip leading/trailing whitespace from cell values and names.
+    encoding : str, default "utf-8"
+        File encoding when reading from a file path.
+
+    Returns
+    -------
+    MetricsStore
+        Loaded metrics store instance.
+
+    Raises
+    ------
+    TypeError
+        If the source type is not supported.
+    """
     if isinstance(source, MetricsStore):
         return source
     if isinstance(source, (str, Path)):
         return MetricsStore.from_csv(
-            source, delimiter=delimiter, index_col=index_col, **kwargs
+            source,
+            delimiter=delimiter,
+            index_col=index_col,
+            strip_whitespace=strip_whitespace,
+            encoding=encoding,
         )
     if isinstance(source, Mapping):
         return MetricsStore(data=source)

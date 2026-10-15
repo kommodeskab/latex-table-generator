@@ -209,3 +209,107 @@ def test_live_wandb_fetch_by_project():
     assert "id" in reader[0]
     assert "model" in reader[0]
     assert "test_loss" in reader[0]
+
+
+def test_fetch_wandb_metrics_wildcard_patterns(mock_wandb_api):
+    with patch("wandb.Api", return_value=mock_wandb_api):
+        csv_out = fetch_wandb_metrics(
+            run_ids=["run_001", "run_002"],
+            metrics=["*loss*", "test*loss"],
+            entity="test_entity",
+        )
+
+    reader = list(csv.DictReader(io.StringIO(csv_out)))
+    assert len(reader) == 2
+    assert "*loss*" in reader[0]
+    assert "test*loss" in reader[0]
+    assert float(reader[0]["*loss*"]) == 0.42
+    assert float(reader[0]["test*loss"]) == 0.42
+    assert float(reader[1]["*loss*"]) == 0.15
+    assert float(reader[1]["test*loss"]) == 0.15
+
+
+def test_fetch_wandb_metrics_substring_matching(mock_wandb_api):
+    with patch("wandb.Api", return_value=mock_wandb_api):
+        csv_out = fetch_wandb_metrics(
+            run_ids=["run_001"],
+            metrics=["acc"],
+            entity="test_entity",
+        )
+
+    reader = list(csv.DictReader(io.StringIO(csv_out)))
+    assert "acc" in reader[0]
+    assert float(reader[0]["acc"]) == 0.88
+
+
+def test_fetch_wandb_metrics_duplicate_metrics_error():
+    mock_api = MagicMock()
+    run = MockWandbRun(
+        "run_dup",
+        "dup_model",
+        {"train_loss": 0.5, "val_loss": 0.2, "accuracy": 0.9},
+    )
+    mock_api.run.return_value = run
+
+    with patch("wandb.Api", return_value=mock_api):
+        with pytest.raises(ValueError) as exc_info:
+            fetch_wandb_metrics(
+                project="my_project",
+                run_ids=["run_dup"],
+                metrics=["*loss*"],
+                entity="test_entity",
+            )
+        err = str(exc_info.value)
+        assert "Multiple metrics matched pattern '*loss*'" in err
+        assert "train_loss" in err
+        assert "val_loss" in err
+
+
+def test_fetch_wandb_metrics_kwargs_disallowed(mock_wandb_api):
+    with pytest.raises(TypeError):
+        fetch_wandb_metrics(
+            run_ids=["run_001"],
+            metrics=["test_loss"],
+            unexpected_arg="invalid",
+        )
+
+
+def test_fetch_wandb_metrics_metrics_type_validation(mock_wandb_api):
+    with pytest.raises(ValueError, match="sequence of metric names or patterns"):
+        fetch_wandb_metrics(
+            run_ids=["run_001"],
+            metrics="test_loss",  # string not allowed, must be sequence of strings
+        )
+
+    with pytest.raises(ValueError, match="at least one metric name or pattern"):
+        fetch_wandb_metrics(
+            run_ids=["run_001"],
+            metrics=[],
+        )
+
+
+def test_fetch_wandb_metrics_patterns_with_caching(mock_wandb_api, tmp_path: Path):
+    cache_dir = tmp_path / "pattern_cache"
+    with patch("wandb.Api", return_value=mock_wandb_api):
+        csv_1 = fetch_wandb_metrics(
+            run_ids=["run_001"],
+            metrics=["*loss*"],
+            cache_dir=cache_dir,
+            use_cache=True,
+            show_progress=False,
+            entity="test_entity",
+        )
+
+    mock_wandb_api.run.reset_mock()
+    with patch("wandb.Api", return_value=mock_wandb_api):
+        csv_2 = fetch_wandb_metrics(
+            run_ids=["run_001"],
+            metrics=["*loss*"],
+            cache_dir=cache_dir,
+            use_cache=True,
+            show_progress=False,
+            entity="test_entity",
+        )
+
+    mock_wandb_api.run.assert_not_called()
+    assert csv_1 == csv_2

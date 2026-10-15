@@ -1,7 +1,5 @@
-"""End-to-end tests for generate_latex_table and TableGenerator."""
-
 from pathlib import Path
-from latex_table_generator import TableGenerator, generate_latex_table, generate_table
+from latex_table_generator import TableGenerator, generate_latex_table
 
 
 def test_generate_latex_table_files(tmp_path: Path):
@@ -57,11 +55,3 @@ def test_table_generator_class(tmp_path: Path):
     generator = TableGenerator.from_csv(csv_file, decimals=1)
     res = generator.render("M1: {M1.val}, M2: {M2.val}")
     assert res == "M1: 12.3, M2: 78.9"
-
-
-def test_generate_table_alias(tmp_path: Path):
-    csv_file = tmp_path / "metrics.csv"
-    csv_file.write_text("model,score\nA,0.999\n", encoding="utf-8")
-
-    res = generate_table(csv_file, "Score: {A.score}", decimals=2)
-    assert res == "Score: 1.00"

@@ -422,7 +422,26 @@ class RulesConfig:
 def load_rules(
     source: str | Path | Mapping[str, Any] | RulesConfig | None,
 ) -> RulesConfig:
-    """Helper function to load RulesConfig from file path, YAML string, dict, or existing RulesConfig."""
+    """Load a RulesConfig from a file path, YAML string, dictionary, or existing RulesConfig.
+
+    Parameters
+    ----------
+    source : str, Path, Mapping, RulesConfig, or None
+        Source containing rules configuration (YAML/JSON file path, YAML text string,
+        dictionary mapping, or existing RulesConfig instance). If None, returns an empty RulesConfig.
+
+    Returns
+    -------
+    RulesConfig
+        Loaded rules configuration instance.
+
+    Raises
+    ------
+    FileNotFoundError
+        If the specified file path does not exist.
+    TypeError
+        If the source type is not supported.
+    """
     if source is None:
         return RulesConfig()
     if isinstance(source, RulesConfig):

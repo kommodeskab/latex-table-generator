@@ -3,15 +3,32 @@
 from __future__ import annotations
 
 import csv
+import fnmatch
 import io
 import json
 import os
 import warnings
+from collections.abc import Iterable, Mapping, Sequence
 from pathlib import Path
-from typing import Any, Mapping, Sequence
+from typing import Any
 
 from dotenv import load_dotenv
 from tqdm.auto import tqdm
+
+
+def _find_matching_metrics(pattern: str, candidate_keys: Iterable[str]) -> list[str]:
+    """Find metric keys matching pattern using fnmatch or substring fallback."""
+    candidates = list(candidate_keys)
+    has_wildcard = any(c in pattern for c in ("*", "?", "["))
+    if has_wildcard:
+        return sorted([k for k in candidates if fnmatch.fnmatch(k, pattern)])
+
+    # No wildcards: check exact match first
+    if pattern in candidates:
+        return [pattern]
+
+    # Fallback to substring matching
+    return sorted([k for k in candidates if pattern in k])
 
 
 def _to_json_safe_dict(d: Any) -> dict[str, Any]:
@@ -70,13 +87,21 @@ def _read_cached_run(
 
         summary = data.get("summary", {})
         config = data.get("config", {})
+        available_keys = set(summary.keys()) | set(config.keys())
 
-        # Check if all requested metrics are available in cached summary or config
+        # Check if all requested metric patterns match available keys in cache
         for m in metrics:
-            if m not in summary and m not in config:
+            matches = _find_matching_metrics(m, available_keys)
+            if len(matches) > 1:
+                error_msg = f"Multiple metrics matched pattern '{m}': {matches}"
+                print(error_msg)
+                raise ValueError(error_msg)
+            if len(matches) == 0:
                 return None
 
         return data
+    except ValueError:
+        raise
     except Exception:
         return None
 
@@ -126,14 +151,14 @@ def fetch_wandb_metrics(
     cache_dir: str | Path = ".wandb_cache",
     force_refresh: bool = False,
     max_runs: int | None = None,
-    **kwargs: Any,
 ) -> str:
     """Fetch metrics from Weights & Biases (WandB) runs, cache them locally, and save to CSV.
 
     Parameters
     ----------
-    metrics : list of str
-        List of metric keys to extract from run summaries/configs (e.g. ['test_loss']).
+    metrics : sequence of str
+        Sequence of metric keys or patterns to extract from run summaries/configs
+        (e.g. ['test_loss'], ['*loss*'], or ['train*loss']).
     run_ids : list of str, optional
         List of WandB run IDs. If omitted/None and `project` is given, all runs in `project` are fetched.
     project : str, optional
@@ -164,6 +189,8 @@ def fetch_wandb_metrics(
         Directory where cached run JSON files will be stored.
     force_refresh : bool, default False
         If True, ignores local cache and re-fetches fresh data from WandB.
+    max_runs : int | None, optional
+        Maximum number of runs to fetch from the project.
 
     Returns
     -------
@@ -172,28 +199,21 @@ def fetch_wandb_metrics(
     """
     import wandb
 
-    # Support backwards compatibility if run_ids and metrics are passed positionally
     effective_run_ids = run_ids
-    effective_metrics = metrics
     effective_project = project
 
-    # Handle positional variations or kwargs
-    if effective_metrics is None and "metrics" in kwargs:
-        effective_metrics = kwargs["metrics"]
-
-    if (
-        effective_run_ids is None
-        and isinstance(metrics, Sequence)
-        and not isinstance(metrics, str)
-    ):
-        if "metrics" in kwargs:
-            effective_run_ids = metrics
-            effective_metrics = kwargs["metrics"]
-
-    if effective_metrics is None:
+    if metrics is None or isinstance(metrics, str) or not isinstance(metrics, Sequence):
         raise ValueError(
-            "The 'metrics' argument must be provided as a list of metric names."
+            "The 'metrics' argument must be provided as a sequence of metric names or patterns."
         )
+
+    if len(metrics) == 0:
+        raise ValueError(
+            "The 'metrics' argument must contain at least one metric name or pattern."
+        )
+
+    if not all(isinstance(m, str) for m in metrics):
+        raise ValueError("All elements in 'metrics' must be strings.")
 
     cache_dir_path = Path(cache_dir)
 
@@ -225,13 +245,13 @@ def fetch_wandb_metrics(
     # 3. Resolve column headers for metrics
     col_headers: list[str] = []
     if metric_names and len(metric_names) > 0:
-        for i, m in enumerate(effective_metrics):
+        for i, m in enumerate(metrics):
             if i < len(metric_names) and metric_names[i]:
                 col_headers.append(str(metric_names[i]).strip())
             else:
                 col_headers.append(str(m).strip())
     else:
-        col_headers = [str(m).strip() for m in effective_metrics]
+        col_headers = [str(m).strip() for m in metrics]
 
     # 4. Fetch runs data
     extracted_runs: list[dict[str, Any]] = []
@@ -317,9 +337,7 @@ def fetch_wandb_metrics(
             # Check local cache first if enabled and not force_refresh
             cached_data = None
             if use_cache and not force_refresh:
-                cached_data = _read_cached_run(
-                    cache_dir_path, run_id_str, effective_metrics
-                )
+                cached_data = _read_cached_run(cache_dir_path, run_id_str, metrics)
 
             if cached_data is not None:
                 extracted_runs.append(cached_data)
@@ -404,6 +422,23 @@ def fetch_wandb_metrics(
         )
 
     # 5. Extract rows for each run
+    all_available_keys: set[str] = set()
+    for run_info in extracted_runs:
+        all_available_keys.update(run_info.get("summary", {}).keys())
+        all_available_keys.update(run_info.get("config", {}).keys())
+
+    resolved_metrics: dict[str, str | None] = {}
+    for pat in metrics:
+        matches = _find_matching_metrics(pat, all_available_keys)
+        if len(matches) > 1:
+            error_msg = f"Multiple metrics matched pattern '{pat}': {matches}"
+            print(error_msg)
+            raise ValueError(error_msg)
+        elif len(matches) == 1:
+            resolved_metrics[pat] = matches[0]
+        else:
+            resolved_metrics[pat] = None
+
     rows_data: list[dict[str, Any]] = []
 
     for idx, run_info in enumerate(extracted_runs):
@@ -423,12 +458,14 @@ def fetch_wandb_metrics(
         summary = run_info.get("summary", {})
         config = run_info.get("config", {})
 
-        for orig_metric, target_col in zip(effective_metrics, col_headers):
+        for pat, target_col in zip(metrics, col_headers):
+            matched_key = resolved_metrics[pat]
             val: Any = None
-            if orig_metric in summary:
-                val = summary[orig_metric]
-            elif orig_metric in config:
-                val = config[orig_metric]
+            if matched_key is not None:
+                if matched_key in summary:
+                    val = summary[matched_key]
+                elif matched_key in config:
+                    val = config[matched_key]
 
             if hasattr(val, "item"):
                 val = val.item()
@@ -453,8 +490,3 @@ def fetch_wandb_metrics(
         out_file.write_text(csv_content, encoding="utf-8")
 
     return csv_content
-
-
-# Alias for convenience
-load_wandb_metrics = fetch_wandb_metrics
-export_wandb_metrics = fetch_wandb_metrics

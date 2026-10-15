@@ -219,7 +219,34 @@ def format_value(
     scale: float | None = None,
     unit: str | None = None,
 ) -> str:
-    """Format a single numeric or string value for LaTeX table display with auto-scaling."""
+    """Format a single numeric or string value for LaTeX table display with auto-scaling.
+
+    Parameters
+    ----------
+    val : Any
+        Value to format.
+    decimals : int, optional
+        Number of decimal places for numeric values.
+    format_spec : str, optional
+        Python format specification or style pipeline string.
+    extra_styles : list of str, optional
+        LaTeX styles (e.g. ['bold', 'italic']).
+    color : str, optional
+        LaTeX text color name or hex code.
+    cell_color : str, optional
+        LaTeX cell background color name or hex code.
+    auto_scale : str or bool, optional
+        SI/IEC auto-scaling mode ('si', 'binary', or True).
+    scale : float, optional
+        Multiplicative scale factor applied to the value.
+    unit : str, optional
+        Trailing unit string.
+
+    Returns
+    -------
+    str
+        Formatted LaTeX cell content string.
+    """
     if val is None:
         return apply_latex_styles(
             "-", styles=extra_styles, color=color, cell_color=cell_color
@@ -290,7 +317,38 @@ def format_uncertainty(
     scale: float | None = None,
     unit: str | None = None,
 ) -> str:
-    """Format a mean and standard deviation uncertainty pair with SI prefix scaling."""
+    """Format a mean and standard deviation uncertainty pair with SI prefix scaling.
+
+    Parameters
+    ----------
+    mean_val : Any
+        Mean value.
+    std_val : Any
+        Standard deviation / uncertainty value.
+    decimals : int, optional
+        Number of decimal places for numeric values.
+    format_spec : str, optional
+        Python format specification or style pipeline string.
+    pm_symbol : str, default r"\\ensuremath{\\pm}"
+        LaTeX symbol for plus-minus uncertainty.
+    extra_styles : list of str, optional
+        LaTeX styles (e.g. ['bold', 'italic']).
+    color : str, optional
+        LaTeX text color name or hex code.
+    cell_color : str, optional
+        LaTeX cell background color name or hex code.
+    auto_scale : str or bool, optional
+        SI/IEC auto-scaling mode ('si', 'binary', or True).
+    scale : float, optional
+        Multiplicative scale factor applied to the values.
+    unit : str, optional
+        Trailing unit string.
+
+    Returns
+    -------
+    str
+        Formatted LaTeX uncertainty string.
+    """
     num_spec, styles, spec_auto_scale, spec_scale, spec_unit = _parse_format_spec(
         format_spec
     )
