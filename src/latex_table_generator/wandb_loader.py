@@ -422,23 +422,6 @@ def fetch_wandb_metrics(
         )
 
     # 5. Extract rows for each run
-    all_available_keys: set[str] = set()
-    for run_info in extracted_runs:
-        all_available_keys.update(run_info.get("summary", {}).keys())
-        all_available_keys.update(run_info.get("config", {}).keys())
-
-    resolved_metrics: dict[str, str | None] = {}
-    for pat in metrics:
-        matches = _find_matching_metrics(pat, all_available_keys)
-        if len(matches) > 1:
-            error_msg = f"Multiple metrics matched pattern '{pat}': {matches}"
-            print(error_msg)
-            raise ValueError(error_msg)
-        elif len(matches) == 1:
-            resolved_metrics[pat] = matches[0]
-        else:
-            resolved_metrics[pat] = None
-
     rows_data: list[dict[str, Any]] = []
 
     for idx, run_info in enumerate(extracted_runs):
@@ -457,15 +440,31 @@ def fetch_wandb_metrics(
 
         summary = run_info.get("summary", {})
         config = run_info.get("config", {})
+        run_keys = set(summary.keys()) | set(config.keys())
 
         for pat, target_col in zip(metrics, col_headers):
-            matched_key = resolved_metrics[pat]
+            matches = _find_matching_metrics(pat, run_keys)
+            if len(matches) > 1:
+                error_msg = (
+                    f"Multiple metrics matched pattern '{pat}' for run '{run_id_str}' "
+                    f"({model_name}): {matches}"
+                )
+                print(error_msg)
+                raise ValueError(error_msg)
+            if len(matches) == 0:
+                error_msg = (
+                    f"No metric found matching pattern '{pat}' for run '{run_id_str}' "
+                    f"({model_name}). Available metrics: {sorted(run_keys)}"
+                )
+                print(error_msg)
+                raise ValueError(error_msg)
+
+            matched_key = matches[0]
             val: Any = None
-            if matched_key is not None:
-                if matched_key in summary:
-                    val = summary[matched_key]
-                elif matched_key in config:
-                    val = config[matched_key]
+            if matched_key in summary:
+                val = summary[matched_key]
+            elif matched_key in config:
+                val = config[matched_key]
 
             if hasattr(val, "item"):
                 val = val.item()

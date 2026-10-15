@@ -313,3 +313,49 @@ def test_fetch_wandb_metrics_patterns_with_caching(mock_wandb_api, tmp_path: Pat
 
     mock_wandb_api.run.assert_not_called()
     assert csv_1 == csv_2
+
+
+def test_fetch_wandb_metrics_different_metric_names_per_run():
+    mock_api = MagicMock()
+    run1 = MockWandbRun("run_a", "Model A", {"train_loss": 0.42, "acc": 0.88})
+    run2 = MockWandbRun("run_b", "Model B", {"val_loss": 0.15, "acc": 0.94})
+
+    def mock_run(path: str):
+        if "run_a" in path:
+            return run1
+        elif "run_b" in path:
+            return run2
+        raise ValueError("Not found")
+
+    mock_api.run.side_effect = mock_run
+
+    with patch("wandb.Api", return_value=mock_api):
+        csv_out = fetch_wandb_metrics(
+            project="my_project",
+            run_ids=["run_a", "run_b"],
+            metrics=["*loss*"],
+            entity="test_entity",
+        )
+
+    reader = list(csv.DictReader(io.StringIO(csv_out)))
+    assert len(reader) == 2
+    assert float(reader[0]["*loss*"]) == 0.42
+    assert float(reader[1]["*loss*"]) == 0.15
+
+
+def test_fetch_wandb_metrics_missing_metric_error():
+    mock_api = MagicMock()
+    run = MockWandbRun("run_missing", "Model X", {"accuracy": 0.95})
+    mock_api.run.return_value = run
+
+    with patch("wandb.Api", return_value=mock_api):
+        with pytest.raises(ValueError) as exc_info:
+            fetch_wandb_metrics(
+                project="my_project",
+                run_ids=["run_missing"],
+                metrics=["*loss*"],
+                entity="test_entity",
+            )
+        err = str(exc_info.value)
+        assert "No metric found matching pattern '*loss*'" in err
+        assert "run_missing" in err
