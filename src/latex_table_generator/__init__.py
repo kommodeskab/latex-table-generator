@@ -15,6 +15,7 @@ from latex_table_generator.generator import (
 from latex_table_generator.metrics import (
     MetricNotFoundError,
     MetricsStore,
+    delete_csv_file,
     load_metrics,
 )
 from latex_table_generator.rules import GroupRule, RulesConfig, load_rules
@@ -29,6 +30,7 @@ __all__ = [
     "TableGenerator",
     "MetricsStore",
     "load_metrics",
+    "delete_csv_file",
     "MetricNotFoundError",
     "TemplateRenderer",
     "align_latex_table",

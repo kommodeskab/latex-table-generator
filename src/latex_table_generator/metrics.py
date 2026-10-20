@@ -342,3 +342,44 @@ def load_metrics(
     if hasattr(source, "to_dict"):
         return MetricsStore.from_dataframe(source)
     raise TypeError(f"Cannot load metrics from source of type: {type(source)}")
+
+
+def delete_csv_file(file_path: str | Path, missing_ok: bool = True) -> bool:
+    """Delete a CSV file from disk.
+
+    Parameters
+    ----------
+    file_path : str or Path
+        Path to the CSV file to delete.
+    missing_ok : bool, default True
+        If True, do not raise an error when the file does not exist.
+
+    Returns
+    -------
+    bool
+        True if the file was found and deleted, False if it did not exist.
+
+    Raises
+    ------
+    ValueError
+        If `file_path` does not have a '.csv' extension.
+    FileNotFoundError
+        If the file does not exist and `missing_ok` is False.
+    IsADirectoryError
+        If `file_path` exists but is a directory.
+    """
+    path = Path(file_path)
+
+    if path.suffix.lower() != ".csv":
+        raise ValueError(f"Expected a '.csv' file, but got: '{path.name}'")
+
+    if not path.exists():
+        if not missing_ok:
+            raise FileNotFoundError(f"File not found: {path}")
+        return False
+
+    if not path.is_file():
+        raise IsADirectoryError(f"Expected a file, but found a directory: {path}")
+
+    path.unlink()
+    return True

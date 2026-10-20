@@ -1,10 +1,13 @@
 """Tests for MetricsStore and load_metrics."""
 
 from pathlib import Path
+
 import pytest
+
 from latex_table_generator.metrics import (
     MetricNotFoundError,
     MetricsStore,
+    delete_csv_file,
     load_metrics,
 )
 
@@ -90,3 +93,37 @@ def test_load_metrics_explicit_parameters(tmp_path: Path):
 def test_load_metrics_disallow_kwargs():
     with pytest.raises(TypeError):
         load_metrics("model,acc\nM1,0.9\n", unknown_arg=True)
+
+
+def test_delete_csv_file_success(tmp_path: Path):
+    csv_file = tmp_path / "data.csv"
+    csv_file.write_text("model,acc\nM1,0.9\n", encoding="utf-8")
+    assert csv_file.exists()
+
+    result = delete_csv_file(csv_file)
+    assert result is True
+    assert not csv_file.exists()
+
+
+def test_delete_csv_file_missing_ok(tmp_path: Path):
+    non_existent = tmp_path / "non_existent.csv"
+    assert delete_csv_file(non_existent, missing_ok=True) is False
+
+    with pytest.raises(FileNotFoundError):
+        delete_csv_file(non_existent, missing_ok=False)
+
+
+def test_delete_csv_file_invalid_extension(tmp_path: Path):
+    txt_file = tmp_path / "notes.txt"
+    txt_file.write_text("hello", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="Expected a '.csv' file"):
+        delete_csv_file(txt_file)
+
+
+def test_delete_csv_file_directory(tmp_path: Path):
+    dir_path = tmp_path / "folder.csv"
+    dir_path.mkdir()
+
+    with pytest.raises(IsADirectoryError):
+        delete_csv_file(dir_path)
