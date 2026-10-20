@@ -138,6 +138,7 @@ def fetch_wandb_metrics(
     run_ids: Sequence[str] | None = None,
     project: str | None = None,
     output_path: str | Path | None = None,
+    overwrite_file: bool = True,
     run_names: Sequence[str] | None = None,
     metric_names: Sequence[str] | None = None,
     entity: str | None = None,
@@ -165,6 +166,9 @@ def fetch_wandb_metrics(
         WandB project name. If `run_ids` is omitted, all runs in this project will be exported.
     output_path : str or Path, optional
         Path where the generated .csv file will be saved.
+    overwrite_file : bool, default True
+        If True, wipes and replaces output_path with new values.
+        If False, appends new rows to output_path and checks that model names do not already exist.
     run_names : list of str, optional
         Custom model/row names. If None or empty, uses the run names from WandB.
     metric_names : list of str, optional
@@ -214,6 +218,9 @@ def fetch_wandb_metrics(
 
     if not all(isinstance(m, str) for m in metrics):
         raise ValueError("All elements in 'metrics' must be strings.")
+
+    if not isinstance(overwrite_file, bool):
+        raise ValueError("The 'overwrite_file' argument must be a boolean.")
 
     cache_dir_path = Path(cache_dir)
 
@@ -486,6 +493,59 @@ def fetch_wandb_metrics(
     if output_path is not None:
         out_file = Path(output_path)
         out_file.parent.mkdir(parents=True, exist_ok=True)
-        out_file.write_text(csv_content, encoding="utf-8")
+        if overwrite_file or not out_file.exists() or out_file.stat().st_size == 0:
+            out_file.write_text(csv_content, encoding="utf-8")
+        else:
+            with out_file.open("r", encoding="utf-8") as f:
+                reader = csv.reader(f)
+                try:
+                    existing_header = next(reader)
+                except StopIteration:
+                    existing_header = None
+
+            if existing_header is None:
+                out_file.write_text(csv_content, encoding="utf-8")
+            else:
+                if existing_header != fieldnames:
+                    raise ValueError(
+                        f"CSV header mismatch in '{output_path}'. "
+                        f"Existing header: {existing_header}, expected: {fieldnames}"
+                    )
+
+                with out_file.open("r", encoding="utf-8") as f:
+                    dict_reader = csv.DictReader(f)
+                    existing_models = {
+                        str(row[existing_header[0]]).strip()
+                        for row in dict_reader
+                        if row
+                        and existing_header[0] in row
+                        and row[existing_header[0]] is not None
+                    }
+
+                for row_dict in rows_data:
+                    model_val = str(row_dict[model_column]).strip()
+                    if model_val in existing_models:
+                        raise ValueError(
+                            f"Model '{model_val}' already exists in '{output_path}'."
+                        )
+                    existing_models.add(model_val)
+
+                existing_text = out_file.read_text(encoding="utf-8")
+                needs_newline = len(existing_text) > 0 and not existing_text.endswith(
+                    "\n"
+                )
+
+                append_io = io.StringIO()
+                if needs_newline:
+                    append_io.write("\n")
+                append_writer = csv.DictWriter(
+                    append_io, fieldnames=fieldnames, lineterminator="\n"
+                )
+                append_writer.writerows(rows_data)
+
+                with out_file.open("a", encoding="utf-8") as f:
+                    f.write(append_io.getvalue())
+
+            csv_content = out_file.read_text(encoding="utf-8")
 
     return csv_content

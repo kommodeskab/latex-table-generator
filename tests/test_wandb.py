@@ -137,6 +137,123 @@ def test_fetch_wandb_metrics_file_output(mock_wandb_api, tmp_path: Path):
     assert "snr loss,run_001,0.42" in content
 
 
+def test_fetch_wandb_metrics_overwrite_file_default(mock_wandb_api, tmp_path: Path):
+    out_file = tmp_path / "wandb_out.csv"
+    with patch("wandb.Api", return_value=mock_wandb_api):
+        fetch_wandb_metrics(
+            run_ids=["run_001"],
+            metrics=["test_loss"],
+            output_path=out_file,
+            entity="test_entity",
+        )
+        assert "snr loss" in out_file.read_text(encoding="utf-8")
+
+        # By default overwrite_file=True, wipes and replaces existing file
+        csv_out = fetch_wandb_metrics(
+            run_ids=["run_002"],
+            metrics=["test_loss"],
+            output_path=out_file,
+            entity="test_entity",
+        )
+
+    content = out_file.read_text(encoding="utf-8")
+    assert "snr loss" not in content
+    assert "drifting loss" in content
+    assert "drifting loss" in csv_out
+
+
+def test_fetch_wandb_metrics_append_new_rows(mock_wandb_api, tmp_path: Path):
+    out_file = tmp_path / "wandb_out.csv"
+    with patch("wandb.Api", return_value=mock_wandb_api):
+        # Initial write
+        fetch_wandb_metrics(
+            run_ids=["run_001"],
+            metrics=["test_loss"],
+            output_path=out_file,
+            entity="test_entity",
+        )
+
+        # Append new row with overwrite_file=False
+        csv_out = fetch_wandb_metrics(
+            run_ids=["run_002"],
+            metrics=["test_loss"],
+            output_path=out_file,
+            overwrite_file=False,
+            entity="test_entity",
+        )
+
+    content = out_file.read_text(encoding="utf-8")
+    reader = list(csv.DictReader(io.StringIO(content)))
+    assert len(reader) == 2
+    assert reader[0]["model"] == "snr loss"
+    assert reader[0]["id"] == "run_001"
+    assert reader[1]["model"] == "drifting loss"
+    assert reader[1]["id"] == "run_002"
+
+    returned_reader = list(csv.DictReader(io.StringIO(csv_out)))
+    assert len(returned_reader) == 2
+    assert returned_reader[0]["model"] == "snr loss"
+    assert returned_reader[1]["model"] == "drifting loss"
+
+
+def test_fetch_wandb_metrics_append_duplicate_model_error(
+    mock_wandb_api, tmp_path: Path
+):
+    out_file = tmp_path / "wandb_out.csv"
+    with patch("wandb.Api", return_value=mock_wandb_api):
+        fetch_wandb_metrics(
+            run_ids=["run_001"],
+            metrics=["test_loss"],
+            output_path=out_file,
+            entity="test_entity",
+        )
+
+        with pytest.raises(ValueError) as exc_info:
+            fetch_wandb_metrics(
+                run_ids=["run_001"],
+                metrics=["test_loss"],
+                output_path=out_file,
+                overwrite_file=False,
+                entity="test_entity",
+            )
+
+        assert "Model 'snr loss' already exists" in str(exc_info.value)
+
+
+def test_fetch_wandb_metrics_append_header_mismatch_error(
+    mock_wandb_api, tmp_path: Path
+):
+    out_file = tmp_path / "wandb_out.csv"
+    with patch("wandb.Api", return_value=mock_wandb_api):
+        fetch_wandb_metrics(
+            run_ids=["run_001"],
+            metrics=["test_loss"],
+            output_path=out_file,
+            entity="test_entity",
+        )
+
+        with pytest.raises(ValueError) as exc_info:
+            fetch_wandb_metrics(
+                run_ids=["run_002"],
+                metrics=["accuracy"],
+                output_path=out_file,
+                overwrite_file=False,
+                entity="test_entity",
+            )
+
+        assert "CSV header mismatch" in str(exc_info.value)
+
+
+def test_fetch_wandb_metrics_overwrite_file_invalid_type(mock_wandb_api):
+    with pytest.raises(ValueError) as exc_info:
+        fetch_wandb_metrics(
+            run_ids=["run_001"],
+            metrics=["test_loss"],
+            overwrite_file="false",  # type: ignore[arg-type]
+        )
+    assert "The 'overwrite_file' argument must be a boolean." in str(exc_info.value)
+
+
 def test_fetch_wandb_metrics_caching(mock_wandb_api, tmp_path: Path):
     cache_dir = tmp_path / "custom_cache"
     with patch("wandb.Api", return_value=mock_wandb_api):
